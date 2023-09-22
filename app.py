@@ -132,7 +132,7 @@ def derive_results(df):
 df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
 df_sheet["date"] = df_sheet["date"].astype(str)
 list_of_available_dates = df_sheet["date"].tolist()
-selected_items = st.multiselect('Choose matchday(s) to use:', list_of_available_dates)
+selected_items = st.multiselect('Choose matchday(s):', list_of_available_dates)
 #start_date = st.date_input("Start date:")
 #st.write('Day to document:', start_date)
 #end_date = st.date_input("End date:", datetime.datetime.now())
