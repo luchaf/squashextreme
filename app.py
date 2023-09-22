@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 import pandas as pd
+import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
@@ -128,26 +129,36 @@ def derive_results(df):
 
     return results
 
-
 df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
+df_sheet["date"] = df_sheet["date"].astype(str)
+list_of_available_dates = df_sheet["date"].tolist()
+selected_items = st.multiselect('Choose matchday(s) to use:', list_of_available_dates)
+#start_date = st.date_input("Start date:")
+#st.write('Day to document:', start_date)
+#end_date = st.date_input("End date:", datetime.datetime.now())
+#st.write('Day to document:', end_date)
 
 df_sheet['parsed_sheet_df'] = df_sheet.apply(lambda x: extract_data_from_games(x["games"], x["date"]), axis=1)
-df = pd.DataFrame()
+df_tmp = pd.DataFrame()
 for _, row in df_sheet.iterrows():
-    df = pd.concat([df, row["parsed_sheet_df"]])
+    df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
+#df['date'] = pd.to_datetime(df['date'], format='%Y%m%d').dt.date
+#df = df[(df["date"]>=start_date) & (df["date"]<=end_date)].copy()
+df = df_tmp[df_tmp["date"].isin(selected_items)].copy()
 
-# Derive player and combination stats
-players_stats = calculate_player_stats(df)
-combination_stats = calculate_combination_stats(df)
+if df.empty!=True:
+    # Derive player and combination stats
+    players_stats = calculate_player_stats(df)
+    combination_stats = calculate_combination_stats(df)
+    
+    # Derive results
+    results = derive_results(df)
+    
+    # Calculate win and loss streaks
+    streaks = calculate_streaks(results)
+    
+    streaks
+    players_stats
+    combination_stats
 
-# Derive results
-results = derive_results(df)
-
-# Calculate win and loss streaks
-streaks = calculate_streaks(results)
-
-streaks
-players_stats
-combination_stats
-
-plot_individual_charts(results)
+    plot_individual_charts(results)
