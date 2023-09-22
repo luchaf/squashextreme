@@ -93,9 +93,9 @@ def plot_individual_charts(results):
         plt.ylabel('Cumulative Score')
         plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
         plt.legend()
-        plt.show()
+        st.pyplot(plt)  # Display figure in Streamlit app
+        plt.clf()  # Clear current figure
 
-    # Iterate through each player's results and plot them in individual subplots
     for player, res in results.items():
         plt.figure(figsize=(10, 4))
         plt.plot(res, label=player, marker='o', linestyle='-')
@@ -105,7 +105,8 @@ def plot_individual_charts(results):
         plt.yticks([-1, 1], ['Loss', 'Win'])
         plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
         plt.legend()
-        plt.show()
+        st.pyplot(plt)  # Display figure in Streamlit app
+        plt.clf()  # Clear current figure
 
 def derive_results(df):
     results = {
@@ -141,7 +142,6 @@ combination_stats = calculate_combination_stats(df)
 
 # Derive results
 results = derive_results(df)
-plot_individual_charts(results)
 
 # Calculate win and loss streaks
 streaks = calculate_streaks(results)
@@ -149,3 +149,5 @@ streaks = calculate_streaks(results)
 streaks
 players_stats
 combination_stats
+
+plot_individual_charts(results)
