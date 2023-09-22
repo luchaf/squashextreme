@@ -85,30 +85,6 @@ def calculate_streaks(results):
     
     return pd.DataFrame(streak_data)
 
-def plot_individual_charts(results):
-    for player, res in results.items():
-        plt.figure(figsize=(10, 4))
-        plt.plot(np.cumsum(res), label=f'{player} Trend')
-        plt.title(f"Win/Loss Trend for {player} Over Time")
-        plt.xlabel('Games')
-        plt.ylabel('Cumulative Score')
-        plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
-        plt.legend()
-        st.pyplot(plt)  # Display figure in Streamlit app
-        plt.clf()  # Clear current figure
-
-    for player, res in results.items():
-        plt.figure(figsize=(10, 4))
-        plt.plot(res, label=player, marker='o', linestyle='-')
-        plt.title(f"Wins and Losses for {player} Over Time")
-        plt.xlabel('Games')
-        plt.ylabel('Result')
-        plt.yticks([-1, 1], ['Loss', 'Win'])
-        plt.axhline(0, color='black', linewidth=0.5, linestyle='--')
-        plt.legend()
-        st.pyplot(plt)  # Display figure in Streamlit app
-        plt.clf()  # Clear current figure
-
 def derive_results(df):
     results = {
         'Simon': [],
@@ -129,10 +105,80 @@ def derive_results(df):
 
     return results
 
+def plot_individual_charts(results):
+    # Define colors for the players.
+    player_colors = {
+        'Simon': 'red',
+        'Friedemann': 'blue',
+        'Lucas': 'green'
+    }
+
+    # Check the background color to determine if it's a dark theme or light theme
+    bg_color = st.get_option("theme.backgroundColor")
+    if bg_color is None:
+        bg_color = "#FFFFFF"  # Default to light theme's white background
+    
+    is_dark_theme = int(bg_color[1:3], 16) < 128  # Convert hex to integer and check if it's below mid-range
+
+
+    # Set title color based on theme
+    title_color = 'white' if is_dark_theme else 'black'
+    title_color = 'white'
+
+    for player, res in results.items():
+        fig, ax = plt.subplots(figsize=(12, 5))
+        
+        # Plotting the cumulative sum of results
+        ax.plot(np.cumsum(res), color=player_colors[player], marker='o', linestyle='-')
+        
+        # Titles, labels, and legends
+        ax.set_title(f"Win/Loss Trend for {player} Over Time", fontsize=16, color=title_color)
+        ax.set_xlabel('Games', fontsize=14, color=title_color)
+        ax.set_ylabel('Cumulative Score', fontsize=14, color=title_color)
+        
+        # Making the background transparent and removing unwanted lines
+        fig.patch.set_alpha(0.0)
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.tick_params(axis='x', colors=title_color)
+        ax.tick_params(axis='y', colors=title_color)
+        ax.grid(False)  # Turn off grid
+        
+        st.pyplot(fig, transparent=True)
+
+    for player, res in results.items():
+        fig, ax = plt.subplots(figsize=(12, 5))
+        
+        # Plotting wins and losses over time
+        ax.plot(res, marker='o', linestyle='-', color=player_colors[player])
+        
+        # Titles, labels, and legends
+        ax.set_title(f"Wins and Losses for {player} Over Time", fontsize=16, color=title_color)
+        ax.set_xlabel('Games', fontsize=14, color=title_color)
+        ax.set_ylabel('Result', fontsize=14, color=title_color)
+        ax.set_yticks([-1, 1])
+        ax.set_yticklabels(['Loss', 'Win'], color=title_color)
+        
+        # Making the background transparent and removing unwanted lines
+        fig.patch.set_alpha(0.0)
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.tick_params(axis='x', colors=title_color)
+        ax.tick_params(axis='y', colors=title_color)
+        ax.grid(False)  # Turn off grid
+        
+        st.pyplot(fig, transparent=True)
+
 df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
 df_sheet["date"] = df_sheet["date"].astype(str)
 list_of_available_dates = df_sheet["date"].tolist()
-selected_items = st.multiselect('Choose matchday(s):', list_of_available_dates)
+selected_items = st.multiselect('Choose matchday(s):', list_of_available_dates, placeholder="You can select one or several matchdays")
 #start_date = st.date_input("Start date:")
 #st.write('Day to document:', start_date)
 #end_date = st.date_input("End date:", datetime.datetime.now())
