@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.ticker import MaxNLocator
 
 def extract_data_from_games(games, date):
     pattern = r'([A-Za-z]+|S)\s-\s([A-Za-z]+|L)\s(\d{1,2}:\d{1,2})'
@@ -105,14 +106,70 @@ def derive_results(df):
 
     return results
 
-def plot_individual_charts(results):
-    # Define colors for the players.
-    player_colors = {
-        'Simon': 'red',
-        'Friedemann': 'blue',
+color_map = {
+    'Lucas': 'green',
+    'Simon': 'blue',
+    'Friedemann': 'pink'
+}
+
+# Define colors for the players.
+player_colors = {
+        'Simon': 'blue',
+        'Friedemann': 'pink',
         'Lucas': 'green',
-        "Leeroy Jenkins": "pink",
+        "Leeroy Jenkins": "grey",
     }
+
+title_color = 'black'
+
+def win_loss_trends_plot(results):
+    for player, res in results.items():
+        fig, ax = plt.subplots(figsize=(12, 5))
+        # Plotting the cumulative sum of results
+        ax.plot(np.cumsum(res), color=player_colors[player], marker='o', linestyle='-')
+        # Titles, labels, and legends
+        ax.set_title(f"Win/Loss Trend for {player} Over Time", fontsize=16, color=title_color)
+        ax.set_xlabel('Games', fontsize=14, color=title_color)
+        ax.set_ylabel('Cumulative Score', fontsize=14, color=title_color)
+        # Making the background transparent and removing unwanted lines
+        fig.patch.set_alpha(0.0)
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.tick_params(axis='x', colors=title_color)
+        ax.tick_params(axis='y', colors=title_color)
+        #ax.grid(False)  # Turn off grid
+        plt.tight_layout()
+        st.pyplot(fig, transparent=True)
+
+def wins_and_losses_over_time_plot(results):
+    for player, res in results.items():
+        fig, ax = plt.subplots(figsize=(12, 5))
+        # Plotting wins and losses over time
+        ax.plot(res, marker='o', linestyle='-', color=player_colors[player])
+        # Titles, labels, and legends
+        ax.set_title(f"Wins and Losses for {player} Over Time", fontsize=16, color=title_color)
+        ax.set_xlabel('Games', fontsize=14, color=title_color)
+        ax.set_ylabel('Result', fontsize=14, color=title_color)
+        ax.set_yticks([-1, 1])
+        ax.set_yticklabels(['Loss', 'Win'], color=title_color)
+        # Making the background transparent and removing unwanted lines
+        fig.patch.set_alpha(0.0)
+        ax.set_facecolor((0, 0, 0, 0))
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.tick_params(axis='x', colors=title_color)
+        ax.tick_params(axis='y', colors=title_color)
+        #ax.grid(False)  # Turn off grid
+        plt.tight_layout()
+        st.pyplot(fig, transparent=True)
+
+
+def plot_wins_and_total_scores(df2):
 
     # Check the background color to determine if it's a dark theme or light theme
     bg_color = st.get_option("theme.backgroundColor")
@@ -121,60 +178,171 @@ def plot_individual_charts(results):
     
     is_dark_theme = int(bg_color[1:3], 16) < 128  # Convert hex to integer and check if it's below mid-range
 
-
     # Set title color based on theme
     title_color = 'white' if is_dark_theme else 'black'
-    title_color = 'white'
+    
+    # Bar configurations
+    bar_width = 0.35
+    r1 = np.arange(len(df2['Wins']))  # positions for Wins bars
+    r2 = [x + bar_width for x in r1]  # positions for Total Score bars
 
-    for player, res in results.items():
-        fig, ax = plt.subplots(figsize=(12, 5))
-        
-        # Plotting the cumulative sum of results
-        ax.plot(np.cumsum(res), color=player_colors[player], marker='o', linestyle='-')
-        
-        # Titles, labels, and legends
-        ax.set_title(f"Win/Loss Trend for {player} Over Time", fontsize=16, color=title_color)
-        ax.set_xlabel('Games', fontsize=14, color=title_color)
-        ax.set_ylabel('Cumulative Score', fontsize=14, color=title_color)
-        
-        # Making the background transparent and removing unwanted lines
-        fig.patch.set_alpha(0.0)
-        ax.set_facecolor((0, 0, 0, 0))
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.tick_params(axis='x', colors=title_color)
-        ax.tick_params(axis='y', colors=title_color)
-        ax.grid(False)  # Turn off grid
-        
-        st.pyplot(fig, transparent=True)
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+    
+    # Plot 'Wins'
+    bars1 = ax1.bar(r1, df2['Wins'], color='blue', alpha=0.6, width=bar_width, label='Wins')
+    ax1.set_ylabel('Wins', color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+    ax1.tick_params(axis='x', colors=title_color)
+    
+    # Annotations for Wins
+    for bar in bars1:
+        yval = bar.get_height()
+        ax1.text(bar.get_x() + bar.get_width() / 2, yval + 0.5, int(yval), ha='center', va='bottom', color='blue')
+    
+    # Plot 'Total Score' on the second y-axis
+    ax2 = ax1.twinx()
+    bars2 = ax2.bar(r2, df2['Total Score'], color='red', alpha=0.6, width=bar_width, label='Total Score')
+    ax2.set_ylabel('Total Score', color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
+    
+    # Annotations for Total Score
+    for bar in bars2:
+        yval = bar.get_height()
+        ax2.text(bar.get_x() + bar.get_width() / 2, yval + 10, int(yval), ha='center', va='bottom', color='red')
+    
+    # Adjust x-tick labels to center between two bars
+    ax1.set_xticks([r + bar_width / 2 for r in range(len(df2['Wins']))])
+    ax1.set_xticklabels(df2.index)
+    
+    # Set y-ticks
+    ax1_ticks = np.arange(0, df2['Wins'].max() + 5, 5)
+    ax2_ticks = ax1_ticks * 20
+    
+    ax1.set_yticks(ax1_ticks)
+    ax2.set_yticks(ax2_ticks)
+    
+    # Grid settings
+    ax1.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
+    ax2.grid(None)
+    
+    ax1.set_title('Wins and Total Scores for Players', color=title_color)
+    
+    # Styling settings
+    fig.patch.set_alpha(0.0)
+    ax1.set_facecolor((0, 0, 0, 0))
+    ax2.set_facecolor((0, 0, 0, 0))
+    ax1.spines['top'].set_visible(False)
+    ax1.spines['right'].set_visible(False)
+    ax1.spines['bottom'].set_visible(False)
+    ax1.spines['left'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['bottom'].set_visible(False)
+    ax2.spines['left'].set_visible(False)
 
-    for player, res in results.items():
-        fig, ax = plt.subplots(figsize=(12, 5))
-        
-        # Plotting wins and losses over time
-        ax.plot(res, marker='o', linestyle='-', color=player_colors[player])
-        
-        # Titles, labels, and legends
-        ax.set_title(f"Wins and Losses for {player} Over Time", fontsize=16, color=title_color)
-        ax.set_xlabel('Games', fontsize=14, color=title_color)
-        ax.set_ylabel('Result', fontsize=14, color=title_color)
-        ax.set_yticks([-1, 1])
-        ax.set_yticklabels(['Loss', 'Win'], color=title_color)
-        
-        # Making the background transparent and removing unwanted lines
-        fig.patch.set_alpha(0.0)
-        ax.set_facecolor((0, 0, 0, 0))
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.tick_params(axis='x', colors=title_color)
-        ax.tick_params(axis='y', colors=title_color)
-        ax.grid(False)  # Turn off grid
-        
-        st.pyplot(fig, transparent=True)
+    plt.tight_layout()
+    st.pyplot(fig, transparent=True)
+    
+
+def graph_win_and_loss_streaks(df1):
+    # Define colors for the win and loss streaks
+    colors = {'longest_win_streak': 'green', 'longest_loss_streak': 'red'}
+    title_color = 'black'
+    
+    ax = df1.plot(kind='bar', figsize=(10, 6), color=[colors[col] for col in df1.columns])
+    plt.title("Streaks for Players", fontsize=16, color=title_color)
+    plt.ylabel("Number of Matches", fontsize=14, color=title_color)
+    plt.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
+    
+    # Annotate bars with their values
+    for p in ax.patches:
+        ax.annotate(str(int(p.get_height())), (p.get_x() + p.get_width() / 2., p.get_height()),
+                    ha='center', va='center', fontsize=10, color=title_color, 
+                    xytext=(0, 10 if p.get_height() > 0 else -10), 
+                    textcoords='offset points')
+
+    # Styling settings
+    ax.set_facecolor((0, 0, 0, 0))
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.tick_params(axis='x', colors=title_color, rotation=0)
+    ax.tick_params(axis='y', colors=title_color)
+    
+    # Ensure y-axis has integer ticks only
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+    
+    plt.tight_layout()
+    st.pyplot(plt, transparent=True)
+
+color_map = {
+    'Lucas': 'green',
+    'Simon': 'blue',
+    'Friedemann': 'pink'
+}
+
+def get_colors(players):
+    return [color_map[player] for player in players]
+
+def annotate_bars(ax, bars):
+    for bar in bars:
+        yval = bar.get_height()
+        ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.5, int(yval), 
+                ha='center', va='bottom', color='black', fontsize=10)
+
+def style_axes(ax, title, ylabel):
+    # Set title and labels
+    ax.set_title(title, fontsize=16)
+    ax.set_ylabel(ylabel, fontsize=14)
+    
+    # Remove top and right spines
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    
+    # Set grid
+    ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
+
+
+def plot_player_combo_wins_graph(df):
+    # Bar width
+    bar_width = 0.35
+
+    # Wins Graph
+    fig, ax = plt.subplots(figsize=(10, 6))
+    r1 = np.arange(len(df))
+    r2 = [x + bar_width for x in r1]
+    
+    bars1 = ax.bar(r1, df['Wins A'], width=bar_width, color=get_colors([combo[0] for combo in df.index]))
+    bars2 = ax.bar(r2, df['Wins B'], width=bar_width, color=get_colors([combo[1] for combo in df.index]))
+    style_axes(ax, 'Wins for Player Combos', 'Wins')
+    annotate_bars(ax, bars1)
+    annotate_bars(ax, bars2)
+    ax.set_xticks([r + bar_width for r in range(len(df))])
+    ax.set_xticklabels([f"{combo[0]} vs {combo[1]}" for combo in df.index], rotation=0, ha='right')
+    plt.tight_layout()
+    st.pyplot(fig, transparent=True)
+
+
+def plot_player_combo_total_score_graph(df):
+    # Bar width
+    bar_width = 0.35
+
+    # Wins Graph
+    fig, ax = plt.subplots(figsize=(10, 6))
+    r1 = np.arange(len(df))
+    r2 = [x + bar_width for x in r1]
+    
+    # Total Scores Graph
+    bars1 = ax.bar(r1, df['Total Score A'], width=bar_width, color=get_colors([combo[0] for combo in df.index]))
+    bars2 = ax.bar(r2, df['Total Score B'], width=bar_width, color=get_colors([combo[1] for combo in df.index]))
+    style_axes(ax, 'Total Scores for Player Combos', 'Total Score')
+    annotate_bars(ax, bars1)
+    annotate_bars(ax, bars2)
+    ax.set_xticks([r + bar_width for r in range(len(df))])
+    ax.set_xticklabels([f"{combo[0]} vs {combo[1]}" for combo in df.index], rotation=0, ha='right')
+    plt.tight_layout()
+    st.pyplot(fig, transparent=True)
 
 def display_check_out_match_statistics():
     # Existing code for statistics:
@@ -199,11 +367,23 @@ def display_check_out_match_statistics():
         
         # Calculate win and loss streaks
         streaks = calculate_streaks(results)
-        
-        streaks
-        players_stats
-        combination_stats
-
-        plot_individual_charts(results)
+        streaks = streaks.T.sort_values(["longest_win_streak", "longest_loss_streak"], ascending=False)         
+            
+        with st.expander("Individual player stats"):
+            wins_and_total_scores_tab, wins_and_losses_tab, streaks_tab, trends_tab = st.tabs(["Wins and total scores", "Wins and losses over time", "Streaks", "Trends"])
+            with wins_and_total_scores_tab:
+                plot_wins_and_total_scores(players_stats)
+            with wins_and_losses_tab:
+                wins_and_losses_over_time_plot(results)
+            with streaks_tab:
+                graph_win_and_loss_streaks(streaks)
+            with trends_tab:
+                win_loss_trends_plot(results)
+        with st.expander("Player combination stats"):
+            wins_tab, scores_tab = st.tabs(["Wins", "Scores"])
+            with wins_tab:
+                plot_player_combo_wins_graph(combination_stats)
+            with scores_tab:
+                plot_player_combo_total_score_graph(combination_stats)
 
 display_check_out_match_statistics()
