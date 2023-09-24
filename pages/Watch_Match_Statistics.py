@@ -106,28 +106,12 @@ def derive_results(df):
 
     return results
 
-color_map = {
-    'Lucas': 'green',
-    'Simon': 'blue',
-    'Friedemann': 'pink'
-}
-
-# Define colors for the players.
-player_colors = {
-        'Simon': 'blue',
-        'Friedemann': 'pink',
-        'Lucas': 'green',
-        "Leeroy Jenkins": "grey",
-    }
-
-title_color = 'black'
-
-def win_loss_trends_plot(results):
+def win_loss_trends_plot(results, player_colors, title_color):
     for player, res in results.items():
         fig, ax = plt.subplots(figsize=(12, 5))
         # Plotting the cumulative sum of results
         ax.plot(np.cumsum(res), color=player_colors[player], marker='o', linestyle='-')
-        # Titles, labels, and legends
+        # Titles, labels, and legends 
         ax.set_title(f"Win/Loss Trend for {player} Over Time", fontsize=16, color=title_color)
         ax.set_xlabel('Games', fontsize=14, color=title_color)
         ax.set_ylabel('Cumulative Score', fontsize=14, color=title_color)
@@ -144,7 +128,7 @@ def win_loss_trends_plot(results):
         plt.tight_layout()
         st.pyplot(fig, transparent=True)
 
-def wins_and_losses_over_time_plot(results):
+def wins_and_losses_over_time_plot(results, player_colors, title_color):
     for player, res in results.items():
         fig, ax = plt.subplots(figsize=(12, 5))
         # Plotting wins and losses over time
@@ -169,18 +153,8 @@ def wins_and_losses_over_time_plot(results):
         st.pyplot(fig, transparent=True)
 
 
-def plot_wins_and_total_scores(df2):
-
-    # Check the background color to determine if it's a dark theme or light theme
-    bg_color = st.get_option("theme.backgroundColor")
-    if bg_color is None:
-        bg_color = "#FFFFFF"  # Default to light theme's white background
-    
-    is_dark_theme = int(bg_color[1:3], 16) < 128  # Convert hex to integer and check if it's below mid-range
-
-    # Set title color based on theme
-    title_color = 'white' if is_dark_theme else 'black'
-    
+def plot_wins_and_total_scores(df2, title_color):
+   
     # Bar configurations
     bar_width = 0.35
     r1 = np.arange(len(df2['Wins']))  # positions for Wins bars
@@ -244,7 +218,7 @@ def plot_wins_and_total_scores(df2):
     st.pyplot(fig, transparent=True)
     
 
-def graph_win_and_loss_streaks(df1):
+def graph_win_and_loss_streaks(df1, title_color):
     # Define colors for the win and loss streaks
     colors = {'longest_win_streak': 'green', 'longest_loss_streak': 'red'}
     title_color = 'black'
@@ -276,13 +250,8 @@ def graph_win_and_loss_streaks(df1):
     plt.tight_layout()
     st.pyplot(plt, transparent=True)
 
-color_map = {
-    'Lucas': 'green',
-    'Simon': 'blue',
-    'Friedemann': 'pink'
-}
 
-def get_colors(players):
+def get_colors(players, color_map):
     return [color_map[player] for player in players]
 
 def annotate_bars(ax, bars):
@@ -304,7 +273,7 @@ def style_axes(ax, title, ylabel):
     ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
 
 
-def plot_player_combo_wins_graph(df):
+def plot_player_combo_wins_graph(df, color_map):
     # Bar width
     bar_width = 0.35
 
@@ -313,8 +282,8 @@ def plot_player_combo_wins_graph(df):
     r1 = np.arange(len(df))
     r2 = [x + bar_width for x in r1]
     
-    bars1 = ax.bar(r1, df['Wins A'], width=bar_width, color=get_colors([combo[0] for combo in df.index]))
-    bars2 = ax.bar(r2, df['Wins B'], width=bar_width, color=get_colors([combo[1] for combo in df.index]))
+    bars1 = ax.bar(r1, df['Wins A'], width=bar_width, color=get_colors([combo[0] for combo in df.index], color_map=color_map))
+    bars2 = ax.bar(r2, df['Wins B'], width=bar_width, color=get_colors([combo[1] for combo in df.index], color_map=color_map))
     style_axes(ax, 'Wins for Player Combos', 'Wins')
     annotate_bars(ax, bars1)
     annotate_bars(ax, bars2)
@@ -324,7 +293,7 @@ def plot_player_combo_wins_graph(df):
     st.pyplot(fig, transparent=True)
 
 
-def plot_player_combo_total_score_graph(df):
+def plot_player_combo_total_score_graph(df, color_map):
     # Bar width
     bar_width = 0.35
 
@@ -334,8 +303,8 @@ def plot_player_combo_total_score_graph(df):
     r2 = [x + bar_width for x in r1]
     
     # Total Scores Graph
-    bars1 = ax.bar(r1, df['Total Score A'], width=bar_width, color=get_colors([combo[0] for combo in df.index]))
-    bars2 = ax.bar(r2, df['Total Score B'], width=bar_width, color=get_colors([combo[1] for combo in df.index]))
+    bars1 = ax.bar(r1, df['Total Score A'], width=bar_width, color=get_colors([combo[0] for combo in df.index], color_map=color_map))
+    bars2 = ax.bar(r2, df['Total Score B'], width=bar_width, color=get_colors([combo[1] for combo in df.index], color_map=color_map))
     style_axes(ax, 'Total Scores for Player Combos', 'Total Score')
     annotate_bars(ax, bars1)
     annotate_bars(ax, bars2)
@@ -349,8 +318,33 @@ def display_check_out_match_statistics():
     df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
     df_sheet["date"] = df_sheet["date"].astype(str)
     list_of_available_dates = list(set(df_sheet["date"].tolist()))
-    selected_items = st.multiselect('Choose one or several matchday(s):', list_of_available_dates, placeholder="ask and thou ball receive")
+    with st.sidebar:
+        with st.expander("Adjust aesthetics"):
+            col_friede, col_simon, col_lucas = st.columns(3)
+            with col_friede:
+                color_friedemann = st.color_picker('Friedemann', '#ffc0cb')
+            with col_simon:
+                color_simon = st.color_picker('Simon', '#004d9d')
+            with col_lucas:
+                color_lucas = st.color_picker('Lucas', '#7CFC00')
+        selected_items = st.multiselect('Choose one or several matchday(s):', list_of_available_dates, placeholder="ask and thou ball receive")
+
+    color_map = {
+        'Lucas': color_lucas,
+        'Simon': color_simon,
+        'Friedemann': color_friedemann
+    }
     
+    # Define colors for the players.
+    player_colors = {
+            'Simon': color_simon,
+            'Friedemann': color_friedemann,
+            'Lucas': color_lucas,
+            "Leeroy Jenkins": "grey",
+        }
+    
+    title_color = 'black'
+        
     df_sheet['parsed_sheet_df'] = df_sheet.apply(lambda x: extract_data_from_games(x["games"], x["date"]), axis=1)
     df_tmp = pd.DataFrame()
     for _, row in df_sheet.iterrows():
@@ -372,18 +366,18 @@ def display_check_out_match_statistics():
         with st.expander("Individual player stats"):
             wins_and_total_scores_tab, wins_and_losses_tab, streaks_tab, trends_tab = st.tabs(["Wins and total scores", "Wins and losses over time", "Streaks", "Trends"])
             with wins_and_total_scores_tab:
-                plot_wins_and_total_scores(players_stats)
+                plot_wins_and_total_scores(players_stats, title_color)
             with wins_and_losses_tab:
-                wins_and_losses_over_time_plot(results)
+                wins_and_losses_over_time_plot(results, player_colors, title_color)
             with streaks_tab:
-                graph_win_and_loss_streaks(streaks)
+                graph_win_and_loss_streaks(streaks, title_color)
             with trends_tab:
-                win_loss_trends_plot(results)
+                win_loss_trends_plot(results, player_colors, title_color)
         with st.expander("Player combination stats"):
             wins_tab, scores_tab = st.tabs(["Wins", "Scores"])
             with wins_tab:
-                plot_player_combo_wins_graph(combination_stats)
+                plot_player_combo_wins_graph(combination_stats, color_map)
             with scores_tab:
-                plot_player_combo_total_score_graph(combination_stats)
+                plot_player_combo_total_score_graph(combination_stats, color_map)
 
 display_check_out_match_statistics()
