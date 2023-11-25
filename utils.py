@@ -189,6 +189,7 @@ def get_name_streaks_df(df_new):
         df_streak_name = pd.DataFrame(
             [{"Name": name, 'longest_win_streak': longest_win_streak, 'longest_loss_streak': longest_loss_streak}])
         df_streaks = pd.concat([df_streaks, df_streak_name])
+    df_streaks = df_streaks.fillna(0).copy()
     df_streaks = df_streaks.reset_index(drop=True).copy()
     return df_streaks
 
