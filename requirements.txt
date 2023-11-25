@@ -11,7 +11,8 @@ google-auth-httplib2
 langchain 
 langchainhub 
 huggingface_hub 
-openai 
+openai
+plotly
 tiktoken 
 wikipedia
 numexpr
