@@ -87,7 +87,7 @@ with settings_tab:
                     st.warning(f"No matches between {start_date} and {end_date}.")
 
     with st.expander("Adjust aesthetics"):
-        col_friede, col_simon, col_lucas, col_peter, col_tobias = st.columns(3)
+        col_friede, col_simon, col_lucas, col_peter, col_tobias = st.columns(5)
         with col_friede:
             color_friedemann = st.color_picker('Friedemann', '#ffc0cb')
         with col_simon:
