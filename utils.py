@@ -68,9 +68,13 @@ def extract_data_from_games(games, date):
     df = pd.DataFrame(processed_data, columns=["First Name", "Second Name", "First Score", "Second Score"])
 
     for i in ["First Name", "Second Name"]:
-        df[i] = np.where(df[i].str.startswith("S"), "Simon", np.where(df[i].str.startswith("F"), "Friedemann",
-                                                                      np.where(df[i].str.startswith("L"), "Lucas",
-                                                                               "Lucas")))
+        df[i] = (
+            np.where(df[i].str.startswith("S"), "Simon", 
+                     np.where(df[i].str.startswith("F"), "Friedemann",
+                              np.where(df[i].str.startswith("L"), "Lucas", 
+                                       np.where(df[i].str.startswith("T"), "Tobias",
+                                                np.where(df[i].str.startswith("P"), "Peter",
+                                                         "unknown"))))))
 
     df["date"] = date
     return df
