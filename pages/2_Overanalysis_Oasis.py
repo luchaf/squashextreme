@@ -87,17 +87,23 @@ with settings_tab:
                     st.warning(f"No matches between {start_date} and {end_date}.")
 
     with st.expander("Adjust aesthetics"):
-        col_friede, col_simon, col_lucas = st.columns(3)
+        col_friede, col_simon, col_lucas, col_peter, col_tobias = st.columns(3)
         with col_friede:
             color_friedemann = st.color_picker('Friedemann', '#ffc0cb')
         with col_simon:
             color_simon = st.color_picker('Simon', '#004d9d')
         with col_lucas:
             color_lucas = st.color_picker('Lucas', '#7CFC00')
+        with col_peter:
+            color_peter = st.color_picker('Peter', '#7CFC20')
+        with col_tobias:
+            color_tobias = st.color_picker('Tobias', '#9CFC00')
         player_colors = {
             'Simon': color_simon,
             'Friedemann': color_friedemann,
             'Lucas': color_lucas,
+          'Peter': color_peter,
+          'Tobias': color_tobias,          
         }
         title_color = 'black'
 
