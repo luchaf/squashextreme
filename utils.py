@@ -105,8 +105,9 @@ def get_name_opponent_name_df(df):
     # Reset the index
     df_new.reset_index(drop=True, inplace=True)
 
-    # Convert the Win column to numeric values
+    # Convert the Win and Player Score column to numeric values
     df_new['WinsNumeric'] = df_new['Wins'].astype(int)
+    df_new['Player Score'] = df_new['Player Score'].astype(int)
 
     # Calculate the cumulative sum of wins for each player
     df_new['CumulativeWins'] = df_new.groupby('Name')['WinsNumeric'].cumsum()
