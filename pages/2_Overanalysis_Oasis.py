@@ -147,8 +147,8 @@ with settings_tab:
                     with wins_face_to_face_all_time_tab:
                         plot_player_combo_graph(combination_stats, player_colors, "Wins")
                     with wins_face_to_face_over_time_tab:
-                        plot_player_combo_graph(combination_stats, player_colors, "Wins")
-                        #entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
+                        #plot_player_combo_graph(combination_stats, player_colors, "Wins")
+                        entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
 
             with Total_Points_Scored_tab:
                 st.info(f"How many points did each player score...", icon="❓")
@@ -166,8 +166,8 @@ with settings_tab:
                     with scores_face_to_face_all_time_tab:
                         plot_player_combo_graph(combination_stats, player_colors, "Total Score")
                     with scores_face_to_face_over_time_tab:
-                        plot_player_combo_graph(combination_stats, player_colors, "Total Score")
-                        #entities_face_to_face_over_time(df, player_colors, title_color, "Player Score")
+                        #plot_player_combo_graph(combination_stats, player_colors, "Total Score")
+                        entities_face_to_face_over_time(df, player_colors, title_color, "Player Score")
 
         with intermediate_metrics_tab:
             (streaks_tab,
