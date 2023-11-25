@@ -487,38 +487,40 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
 
         matched_df = pd.DataFrame(matched_games).reset_index(drop=True)
 
-        # Get cumulative wins for each player within this filtered dataframe
-        matched_df[f'Cumulative{entity}'] = matched_df.groupby('Name')[entity].cumsum()
-
-        # Plotting the cumulative wins for each player with consistent colors
-        for player in comb:
-            player_data = matched_df[matched_df['Name'] == player]
-            ax1.plot(player_data.index // 2 + 1, player_data[f'Cumulative{entity}'], color=color_map[player], linewidth=5.0)
-
-            # Annotate the last point with the player's name
-            last_point = player_data.iloc[-1]
-            ax1.text(last_point.name // 2 + 1.2, last_point[f'Cumulative{entity}'], player, color=color_map[player],
-                     verticalalignment='center')
-
-        ax1.set_title(f'Cumulative {entity} Between {comb[0]} and {comb[1]}', color=title_color)
-        ax1.set_ylabel(f'Cumulative {entity} Against Each Other', color=title_color)
-        ax1.set_xlabel('Game Number Between The Two', color=title_color)
-        ax1.tick_params(axis='y', labelcolor=title_color)
-        ax1.tick_params(axis='x', colors=title_color)
-        ax1.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-
-        # Making plot transparent and removing spines
-        fig.patch.set_alpha(0.0)
-        ax1.set_facecolor((0, 0, 0, 0))
-        ax1.spines['top'].set_visible(False)
-        ax1.spines['right'].set_visible(False)
-        ax1.spines['bottom'].set_visible(False)
-        ax1.spines['left'].set_visible(False)
-
-        # Annotations
-        for idx, row in matched_df.iterrows():
-            yval = row[f'Cumulative{entity}']
-            ax1.text(idx // 2 + 1, yval + 0.2, int(yval), ha='center', va='bottom', color=title_color)
-
-        plt.tight_layout()
-        st.pyplot(plt, transparent=True)
+        if len(matched_df)>0:
+            
+            # Get cumulative wins for each player within this filtered dataframe
+            matched_df[f'Cumulative{entity}'] = matched_df.groupby('Name')[entity].cumsum()
+    
+            # Plotting the cumulative wins for each player with consistent colors
+            for player in comb:
+                player_data = matched_df[matched_df['Name'] == player]
+                ax1.plot(player_data.index // 2 + 1, player_data[f'Cumulative{entity}'], color=color_map[player], linewidth=5.0)
+    
+                # Annotate the last point with the player's name
+                last_point = player_data.iloc[-1]
+                ax1.text(last_point.name // 2 + 1.2, last_point[f'Cumulative{entity}'], player, color=color_map[player],
+                         verticalalignment='center')
+    
+            ax1.set_title(f'Cumulative {entity} Between {comb[0]} and {comb[1]}', color=title_color)
+            ax1.set_ylabel(f'Cumulative {entity} Against Each Other', color=title_color)
+            ax1.set_xlabel('Game Number Between The Two', color=title_color)
+            ax1.tick_params(axis='y', labelcolor=title_color)
+            ax1.tick_params(axis='x', colors=title_color)
+            ax1.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
+    
+            # Making plot transparent and removing spines
+            fig.patch.set_alpha(0.0)
+            ax1.set_facecolor((0, 0, 0, 0))
+            ax1.spines['top'].set_visible(False)
+            ax1.spines['right'].set_visible(False)
+            ax1.spines['bottom'].set_visible(False)
+            ax1.spines['left'].set_visible(False)
+    
+            # Annotations
+            for idx, row in matched_df.iterrows():
+                yval = row[f'Cumulative{entity}']
+                ax1.text(idx // 2 + 1, yval + 0.2, int(yval), ha='center', va='bottom', color=title_color)
+    
+            plt.tight_layout()
+            st.pyplot(plt, transparent=True)
