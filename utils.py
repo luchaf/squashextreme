@@ -9,7 +9,8 @@ import re
 import sys
 import io
 import itertools
-
+import plotly.graph_objs as go
+import time
 
 class DualOutput:
     """A simple class to write outputs to two streams."""
@@ -344,52 +345,73 @@ def graph_win_and_loss_streaks(df1, title_color):
 def get_colors(players, color_map):
     return [color_map[player] for player in players]
 
-
-def annotate_bars(ax, bars):
-    for bar in bars:
-        yval = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, yval + 0.5, int(yval),
-                ha='center', va='bottom', color='black', fontsize=10)
-
-
-def style_axes(ax, title, ylabel):
-    # Set title and labels
-    ax.set_title(title, fontsize=16)
-    ax.set_ylabel(ylabel, fontsize=14)
-
-    # Remove top and right spines
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-
-    # Set grid
-    ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-
-
+# Function to plot the interactive bar chart
 def plot_player_combo_graph(df, color_map, entity):
-    # Bar width
-    bar_width = 0.35
+    st.title(f'{entity} Comparison per Player Combination')
 
-    # Wins Graph
-    fig, ax = plt.subplots(figsize=(10, 6))
-    r1 = np.arange(len(df))
-    r2 = [x + bar_width for x in r1]
+    # Get a list of all players involved
+    all_players = sorted(set(idx for idx_pair in df.index for idx in idx_pair))
 
-    # Total Scores Graph
-    bars1 = ax.bar(r1, df[f'{entity} A'], width=bar_width,
-                   color=get_colors([combo[0] for combo in df.index], color_map=color_map))
-    bars2 = ax.bar(r2, df[f'{entity} B'], width=bar_width,
-                   color=get_colors([combo[1] for combo in df.index], color_map=color_map))
-    annotate_bars(ax, bars1)
-    annotate_bars(ax, bars2)
-    ax.set_xticks([r + bar_width for r in range(len(df))])
-    ax.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-    ax.set_xticklabels([f"{combo[0]} vs {combo[1]}" for combo in df.index], rotation=0, ha='right')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    plt.tight_layout()
-    st.pyplot(fig, transparent=True)
+    # Generate a unique key for the multiselect widget based on the entity
+    unique_key = f'player_select_{entity}'
+    
+    # Use Streamlit's multiselect widget to allow selection of multiple players
+    selected_players = st.multiselect(
+        'Select players:', all_players, default=all_players, key=unique_key
+    )
+
+    # Initialize the figure
+    fig = go.Figure()
+
+    # Adjust the width of the bars and their opacity
+    # Define bar width relative to the number of bars
+    num_bars = len(df.index) * 2  # times 2 for pairs of bars per group
+    bar_width = max(0.35, min(4, 1 / num_bars))  # Adjust the 0.4 for maximum bar width as needed
+    bar_opacity = 0.6  # Set between 0 and 1 to make bars semi-transparent
+
+    # Add bars for each player combination
+    for idx, row in df.iterrows():
+        player_a, player_b = idx
+        if player_a in selected_players and player_b in selected_players:
+            # Adding a trace for player A
+            fig.add_trace(go.Bar(
+                x=[f'{player_a} vs {player_b}'],
+                y=[row[f'{entity} A']],
+                name=player_a,
+                marker=dict(color=color_map.get(player_a, '#333')),
+                hoverinfo='y+text',
+                hovertext=[f'{entity} for {player_a}'],
+                width=bar_width,
+                opacity=bar_opacity
+            ))
+            # Adding a trace for player B
+            fig.add_trace(go.Bar(
+                x=[f'{player_a} vs {player_b}'],
+                y=[row[f'{entity} B']],
+                name=player_b,
+                marker=dict(color=color_map.get(player_b, '#333')),
+                hoverinfo='y+text',
+                hovertext=[f'{entity} for {player_b}'],
+                width=bar_width,
+                opacity=bar_opacity,
+                showlegend=False
+            ))
+
+    # Set up the figure layout, adjusting the bargap if necessary
+    fig.update_layout(
+        barmode='group',
+        bargap=0.15,  # Adjust the gap between bars of adjacent x-ticks
+        bargroupgap=0.15, 
+        title=f'{entity} Comparison per Player Combination',
+        xaxis=dict(title='Player Combinations'),
+        yaxis=dict(title=f'{entity} Scores'),
+        hovermode='closest',
+        showlegend=False,  # Hiding the legend as the selection is done through multiselect
+    )
+
+    # Show the figure
+    st.plotly_chart(fig)
+
 
 
 def plot_bars(df2, title_color, player_colors, entity):
@@ -471,56 +493,86 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
     st.pyplot(plt, transparent=True)
 
 
+
+
+
+def cumulative_wins_over_time(df, color_map, title_color, entity):
+    # Initialize a Plotly figure
+    fig = go.Figure()
+
+    # For each player, plot the cumulative sum of wins over their respective game number
+    for name, group in df.groupby('Name'):
+        fig.add_trace(go.Scatter(
+            x=group['PlayerGameNumber'],
+            y=group[f'Cumulative{entity}'],
+            mode='lines+markers',  # Only lines and markers, no text
+            name=name,
+            line=dict(color=color_map[name], width=4),
+            marker=dict(size=8),  # Adjust marker size as needed
+        ))
+
+    # Update the layout for the figure
+    fig.update_layout(
+        title=f'Cumulative {entity} Over Time for Each Player',
+        xaxis=dict(title='Player Game Number', color=title_color),
+        yaxis=dict(title=f'Cumulative {entity}', color=title_color),
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        font=dict(color=title_color),
+        hovermode='closest',
+        legend_title=dict(text='Players'),
+        showlegend=True
+    )
+
+    # Display the interactive plot
+    st.plotly_chart(fig)
+
+
+
 def entities_face_to_face_over_time(df, color_map, title_color, entity):
     # Getting unique player combinations
     players = df['Name'].unique()
-    combinations = list(itertools.combinations(players, 2))
-
-    for comb in combinations:
-        fig, ax1 = plt.subplots(figsize=(15, 7))
-
+    all_combinations = list(itertools.combinations(players, 2))
+    
+    # Loop over selected combinations to create a plot for each
+    for comb in all_combinations:
         # Filtering dataframe for games where the two players from the combination played against each other
         matched_games = []
         for i in range(0, len(df) - 1, 2):
-            if set(df.iloc[i:i + 2]['Name'].values) == set(comb):
+            if set(df.iloc[i:i + 2]['Name']) == set(comb):
                 matched_games.extend([df.iloc[i], df.iloc[i + 1]])
 
         matched_df = pd.DataFrame(matched_games).reset_index(drop=True)
 
-        if len(matched_df)>0:
-            
+        if not matched_df.empty:
+            # Initialize a Plotly figure for each combination
+            fig = go.Figure()
+
             # Get cumulative wins for each player within this filtered dataframe
             matched_df[f'Cumulative{entity}'] = matched_df.groupby('Name')[entity].cumsum()
-    
-            # Plotting the cumulative wins for each player with consistent colors
+
+            # Plotting the cumulative wins for each player
             for player in comb:
                 player_data = matched_df[matched_df['Name'] == player]
-                ax1.plot(player_data.index // 2 + 1, player_data[f'Cumulative{entity}'], color=color_map[player], linewidth=5.0)
-    
-                # Annotate the last point with the player's name
-                last_point = player_data.iloc[-1]
-                ax1.text(last_point.name // 2 + 1.2, last_point[f'Cumulative{entity}'], player, color=color_map[player],
-                         verticalalignment='center')
-    
-            ax1.set_title(f'Cumulative {entity} Between {comb[0]} and {comb[1]}', color=title_color)
-            ax1.set_ylabel(f'Cumulative {entity} Against Each Other', color=title_color)
-            ax1.set_xlabel('Game Number Between The Two', color=title_color)
-            ax1.tick_params(axis='y', labelcolor=title_color)
-            ax1.tick_params(axis='x', colors=title_color)
-            ax1.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-    
-            # Making plot transparent and removing spines
-            fig.patch.set_alpha(0.0)
-            ax1.set_facecolor((0, 0, 0, 0))
-            ax1.spines['top'].set_visible(False)
-            ax1.spines['right'].set_visible(False)
-            ax1.spines['bottom'].set_visible(False)
-            ax1.spines['left'].set_visible(False)
-    
-            # Annotations
-            for idx, row in matched_df.iterrows():
-                yval = row[f'Cumulative{entity}']
-                ax1.text(idx // 2 + 1, yval + 0.2, int(yval), ha='center', va='bottom', color=title_color)
-    
-            plt.tight_layout()
-            st.pyplot(plt, transparent=True)
+                fig.add_trace(go.Scatter(
+                    x=player_data.index // 2 + 1,
+                    y=player_data[f'Cumulative{entity}'],
+                    mode='lines+markers',
+                    name=player,
+                    line=dict(color=color_map[player], width=4),
+                    marker=dict(size=8),
+                    showlegend=True
+                ))
+
+            # Update the layout for each figure
+            fig.update_layout(
+                title=f'Cumulative {entity} Between {comb[0]} and {comb[1]}',
+                xaxis=dict(title='Game Number Between The Two', color=title_color),
+                yaxis=dict(title=f'Cumulative {entity}', color=title_color),
+                legend_title=dict(text='Players'),
+                hovermode='closest'
+            )
+
+            # Display the plot for the current combination
+            st.plotly_chart(fig)
+
