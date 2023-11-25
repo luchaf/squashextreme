@@ -155,7 +155,9 @@ def derive_results(df):
     results = {
         'Simon': [],
         'Friedemann': [],
-        'Lucas': []
+        'Lucas': [],
+        'Tobias': [],
+        'Peter': [],
     }
 
     for _, row in df.iterrows():
@@ -179,7 +181,7 @@ def get_streak_counter(df):
 
 def get_name_streaks_df(df_new):
     df_streaks = pd.DataFrame()
-    for name in ["Lucas", "Simon", "Friedemann"]:
+    for name in ["Lucas", "Simon", "Friedemann", "Peter", "Tobias"]:
         df_streak_tmp = df_new[df_new["Name"] == name].copy()
         df_streak_tmp = get_streak_counter(df_streak_tmp)
         longest_win_streak = df_streak_tmp[df_streak_tmp["Wins"] == True]["streak_counter"].max()
