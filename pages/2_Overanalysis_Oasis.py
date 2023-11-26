@@ -95,9 +95,9 @@ with settings_tab:
         with col_lucas:
             color_lucas = st.color_picker('Lucas', '#7CFC00')
         with col_peter:
-            color_peter = st.color_picker('Peter', '#7CFC20')
+            color_peter = st.color_picker('Peter', '#FCBA20')
         with col_tobias:
-            color_tobias = st.color_picker('Tobias', '#9CFC00')
+            color_tobias = st.color_picker('Tobias', '#00FCF8')
         player_colors = {
             'Simon': color_simon,
             'Friedemann': color_friedemann,
@@ -132,17 +132,17 @@ with settings_tab:
         with basic_metrics_tab:
             Number_of_Wins_tab, Total_Points_Scored_tab = st.tabs(["# Wins", "# Points Scored"])
             with Number_of_Wins_tab:
-                st.info(f"How many wins did each player collect...", icon="❓")
+                #st.info(f"How many wins did each player collect...", icon="❓")
                 total_wins_tab, face_to_face_wins_tab = st.tabs(["Total", "Face-to-Face-Feud"])
                 with total_wins_tab:
-                    st.info(f"...in total: static or over time", icon="❓")
+                    #st.info(f"...in total: static or over time", icon="❓")
                     wins_all_time_tab, wins_over_time_tab = st.tabs(["static", "over time"])
                     with wins_all_time_tab:
                         plot_bars(players_stats, title_color, player_colors, "Wins")
                     with wins_over_time_tab:
                         cumulative_wins_over_time(df, player_colors, title_color, "Wins")
                 with face_to_face_wins_tab:
-                    st.info(f"...against specific opponents: static or over time", icon="❓")
+                    #st.info(f"...against specific opponents: static or over time", icon="❓")
                     wins_face_to_face_all_time_tab, wins_face_to_face_over_time_tab = st.tabs(["static", "over time"])
                     with wins_face_to_face_all_time_tab:
                         plot_player_combo_graph(combination_stats, player_colors, "Wins")
@@ -151,17 +151,17 @@ with settings_tab:
                         entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
 
             with Total_Points_Scored_tab:
-                st.info(f"How many points did each player score...", icon="❓")
+                #st.info(f"How many points did each player score...", icon="❓")
                 total_score_tab, face_to_face_score_tab = st.tabs(["Total", "Face-to-Face-Feud"])
                 with total_score_tab:
-                    st.info(f"...in total: static or over time", icon="❓")
+                    #st.info(f"...in total: static or over time", icon="❓")
                     scores_all_time_tab, scores_over_time_tab = st.tabs(["static", "over time"])
                     with scores_all_time_tab:
                         plot_bars(players_stats, title_color, player_colors, "Total Score")
                     with scores_over_time_tab:
                         cumulative_wins_over_time(df, player_colors, title_color, "Total Score")
                 with face_to_face_score_tab:
-                    st.info(f"...against specific opponents: static or over time", icon="❓")
+                    #st.info(f"...against specific opponents: static or over time", icon="❓")
                     scores_face_to_face_all_time_tab, scores_face_to_face_over_time_tab = st.tabs(["static", "over time"])
                     with scores_face_to_face_all_time_tab:
                         plot_player_combo_graph(combination_stats, player_colors, "Total Score")
