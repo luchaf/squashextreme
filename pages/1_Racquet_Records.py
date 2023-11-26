@@ -2,6 +2,9 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 
+# Define a list of player names
+player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
+
 def reset_session_state():
     """Helper function to reset session state."""
     st.session_state['player1_name'] = ''
@@ -34,22 +37,40 @@ def display_enter_match_results():
         if st.button("Enter New Match Result"):
             reset_session_state()
             st.experimental_rerun()
-
     else:
         st.title("Racquet Records: Document your match results")
-
+    
         st.write("Log your praiseworthy or pitiful match results here:")
+        
+        # Use selectbox for player names with an option to add a new player
+        selected_player1 = st.selectbox("Player 1 Name", [''] + player_names + ['Add New Player'])
     
-        # Use session state for values
-        st.session_state['player1_name'] = st.text_input("Player 1 Name", st.session_state['player1_name'])
+        if selected_player1 == 'Add New Player':
+            new_player_name = st.text_input("Enter New Player Name")
+            if new_player_name.strip() != '':
+                player_names.append(new_player_name.strip())
+                selected_player1 = new_player_name.strip()
+
+        if selected_player1 != '':
+            # Use number input for player 1 score with a default value of 0
+            st.session_state['player1_name'] = selected_player1
+            st.session_state['player1_score'] = st.number_input("Player 1 Score", min_value=0, value=st.session_state.get('player1_score', 0), step=1)
+            
+            if st.session_state['player1_score'] is not None:
+                # Use selectbox for player 2 name with an option to add a new player
+                selected_player2 = st.selectbox("Player 2 Name", [''] + player_names + ['Add New Player'])
     
-        if st.session_state['player1_name']:
-            st.session_state['player1_score'] = st.number_input("Player 1 Score", min_value=0, value=st.session_state['player1_score'], step=1)
-            if st.session_state['player1_score'] or st.session_state['player1_score'] == 0:
-                st.session_state['player2_name'] = st.text_input("Player 2 Name", st.session_state['player2_name'])
-                if st.session_state['player2_name']:
-                    st.session_state['player2_score'] = st.number_input("Player 2 Score", min_value=0, value=st.session_state['player2_score'], step=1)
-                    if st.session_state['player2_score'] or st.session_state['player2_score'] == 0:
+                if selected_player2 == 'Add New Player':
+                    new_player_name = st.text_input("Enter New Player Name")
+                    if new_player_name.strip() != '':
+                        player_names.append(new_player_name.strip())
+                        selected_player2 = new_player_name.strip()
+
+                if selected_player2 != '':
+                    # Use number input for player 2 score with a default value of 0
+                    st.session_state['player2_name'] = selected_player2
+                    st.session_state['player2_score'] = st.number_input("Player 2 Score", min_value=0, value=st.session_state.get('player2_score', 0), step=1)
+                    if st.session_state['player2_score'] is not None:
                         st.session_state['matchday_input'] = st.date_input("Matchday", st.session_state['matchday_input'] if st.session_state['matchday_input'] else None)
     
         if st.session_state['matchday_input'] and (st.session_state['player1_name'] or st.session_state['player2_name']):
