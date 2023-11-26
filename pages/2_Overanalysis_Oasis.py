@@ -5,10 +5,12 @@ from utils import (extract_data_from_games, get_name_opponent_name_df, get_name_
                    wins_and_losses_over_time_plot,
                    graph_win_and_loss_streaks,
                    plot_player_combo_graph,
-                   plot_bars, cumulative_wins_over_time, entities_face_to_face_over_time)
+                   plot_bars, cumulative_wins_over_time, entities_face_to_face_over_time, closeness_of_matches_over_time)
 import streamlit as st
 import pandas as pd
 from datetime import date
+
+import matplotlib.pyplot as plt
 
 # Streamlit app
 st.title('Overanalysis Oasis')
@@ -113,6 +115,7 @@ with settings_tab:
         # Dominance Scores
         df = df.reset_index(drop=True).copy()
         df = df.reset_index()
+        
         # Derive player and combination stats
         combination_stats = calculate_combination_stats(df)
         df = get_name_opponent_name_df(df)
@@ -162,12 +165,13 @@ with settings_tab:
                         cumulative_wins_over_time(df, player_colors, title_color, "Total Score")
                 with face_to_face_score_tab:
                     #st.info(f"...against specific opponents: static or over time", icon="❓")
-                    scores_face_to_face_all_time_tab, scores_face_to_face_over_time_tab = st.tabs(["static", "over time"])
+                    scores_face_to_face_all_time_tab, scores_face_to_face_over_time_tab, competitiveness_tab = st.tabs(["static", "points over time", "competitiveness over time"])
                     with scores_face_to_face_all_time_tab:
                         plot_player_combo_graph(combination_stats, player_colors, "Total Score")
                     with scores_face_to_face_over_time_tab:
-                        #plot_player_combo_graph(combination_stats, player_colors, "Total Score")
                         entities_face_to_face_over_time(df, player_colors, title_color, "Player Score")
+                    with competitiveness_tab:
+                        closeness_of_matches_over_time(df, player_colors, title_color)
 
         with intermediate_metrics_tab:
             (streaks_tab,
