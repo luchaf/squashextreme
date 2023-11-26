@@ -12,53 +12,6 @@ import itertools
 import plotly.graph_objs as go
 import time
 
-class DualOutput:
-    """A simple class to write outputs to two streams."""
-
-    def __init__(self, stream1, stream2):
-        self.stream1 = stream1
-        self.stream2 = stream2
-
-    def write(self, message):
-        self.stream1.write(message)
-        self.stream2.write(message)
-
-    def flush(self):
-        self.stream1.flush()
-        self.stream2.flush()
-
-
-def capture_stdout(func, *args, **kwargs):
-    """Capture the stdout of a function and return its value and printed output."""
-    original_stdout = sys.stdout
-    buffer = io.StringIO()
-
-    # Set stdout to write both to the buffer and the original stdout
-    sys.stdout = DualOutput(original_stdout, buffer)
-
-    value = func(*args, **kwargs)
-    sys.stdout = original_stdout
-    return value, buffer.getvalue()
-
-
-def strip_ansi_escape_codes(s):
-    """
-    Remove ANSI escape codes from a string.
-    """
-    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
-    return ansi_escape.sub('', s)
-
-
-def write_prompt_response_to_database(prompt, response):
-    spreadsheetId = st.secrets["public_gsheets_id"]
-    scope = ['https://www.googleapis.com/auth/spreadsheets']
-    google_creds_dict = dict(st.secrets["google_creds"])
-    credentials = Credentials.from_service_account_info(google_creds_dict, scopes=scope)
-    client = gspread.authorize(credentials)
-    spreadsheet = client.open_by_key(spreadsheetId)
-    worksheet = spreadsheet.worksheet("chat_history")
-    worksheet.append_row([prompt, response])
-
 
 def extract_data_from_games(games, date):
     pattern = r'([A-Za-z]+|S)\s-\s([A-Za-z]+|L)\s(\d{1,2}:\d{1,2})'
@@ -79,7 +32,6 @@ def extract_data_from_games(games, date):
 
     df["date"] = date
     return df
-
 
 def get_name_opponent_name_df(df):
     # Create two new dataframes, one for the first players and one for the second players
@@ -458,45 +410,6 @@ def plot_bars(df2, title_color, player_colors, entity):
 
 
 def cumulative_wins_over_time(df, color_map, title_color, entity):
-    fig, ax1 = plt.subplots(figsize=(15, 7))
-
-    # For each player, plot the cumulative sum of wins over their respective game number
-    for name, group in df.groupby('Name'):
-        ax1.plot(group['PlayerGameNumber'], group[f'Cumulative{entity}'], label=name, color=color_map[name], linewidth=5.0)
-
-        # Annotate the last point with the player's name
-        last_point = group.iloc[-1]
-        ax1.text(last_point['PlayerGameNumber'] + 0.5, last_point[f'Cumulative{entity}'], name, color=color_map[name],
-                 verticalalignment='center')
-
-    ax1.set_title(f'Cumulative {entity} Over Time for Each Player', color=title_color)
-    ax1.set_ylabel(f'Cumulative {entity}', color=title_color)
-    ax1.set_xlabel('Player Game Number', color=title_color)
-    ax1.tick_params(axis='y', labelcolor=title_color)
-    ax1.tick_params(axis='x', colors=title_color)
-    ax1.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-
-    # Making plot transparent and removing spines
-    fig.patch.set_alpha(0.0)
-    ax1.set_facecolor((0, 0, 0, 0))
-    ax1.spines['top'].set_visible(False)
-    ax1.spines['right'].set_visible(False)
-    ax1.spines['bottom'].set_visible(False)
-    ax1.spines['left'].set_visible(False)
-
-    # Annotations for Cumulative Wins
-    for idx, row in df.iterrows():
-        ax1.text(row['PlayerGameNumber'], row[f'Cumulative{entity}'] + 0.2, int(row[f'Cumulative{entity}']), ha='center',
-                 va='bottom', color=title_color)
-
-    plt.tight_layout()
-    st.pyplot(plt, transparent=True)
-
-
-
-
-
-def cumulative_wins_over_time(df, color_map, title_color, entity):
     # Initialize a Plotly figure
     fig = go.Figure()
 
@@ -526,7 +439,6 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
 
     # Display the interactive plot
     st.plotly_chart(fig)
-
 
 
 def entities_face_to_face_over_time(df, color_map, title_color, entity):
@@ -569,6 +481,78 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
                 title=f'Cumulative {entity} Between {comb[0]} and {comb[1]}',
                 xaxis=dict(title='Game Number Between The Two', color=title_color),
                 yaxis=dict(title=f'Cumulative {entity}', color=title_color),
+                legend_title=dict(text='Players'),
+                hovermode='closest'
+            )
+
+            # Display the plot for the current combination
+            st.plotly_chart(fig)
+
+
+def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5):
+    # Get unique player combinations
+    player_combinations = df[['Name', 'Opponent Name']].values.tolist()
+    unique_combinations = set(tuple(sorted(comb)) for comb in player_combinations)
+    
+    # Loop over unique player combinations to create a plot for each
+    for combination in unique_combinations:
+        combination_df = df[
+            ((df['Name'] == combination[0]) & (df['Opponent Name'] == combination[1]))
+        ]
+        
+        if not combination_df.empty:
+            # Initialize a Plotly figure for each combination
+            fig = go.Figure()
+            
+            # Plotting the score difference for each match within this combination
+            match_numbers = list(range(1, len(combination_df) + 1))
+            fig.add_trace(go.Scatter(
+                x=match_numbers,
+                y=combination_df['Score Difference'],
+                mode='lines+markers',
+                name=f'{combination[0]} vs {combination[1]}',
+                line=dict(color=color_map[combination[0]], width=4),
+                marker=dict(size=8),
+                showlegend=True
+            ))
+            
+            # Calculate the trendline data points
+            trendline_x = list(range(1, len(match_numbers) + future_matches + 1))
+            trendline_y = combination_df['Score Difference'].rolling(window=5).mean().tolist()
+            
+            # Extend the trendline data for future matches
+            last_trendline_value = trendline_y[-1]
+            for i in range(future_matches):
+                trendline_x.append(len(match_numbers) + i + 1)
+                trendline_y.append(last_trendline_value)
+            
+            # Add the extrapolated trendline to the graph
+            fig.add_trace(go.Scatter(
+                x=trendline_x,
+                y=trendline_y,
+                mode='lines',
+                name=f'Trendline ({combination[0]} vs {combination[1]})',
+                line=dict(color=color_map[combination[0]], width=2, dash='dash'),
+                showlegend=True
+            ))
+            
+            # Add a horizontal dashed black line at 0
+            fig.update_layout(
+                shapes=[dict(
+                    type='line',
+                    x0=1,
+                    x1=len(match_numbers) + future_matches,
+                    y0=0,
+                    y1=0,
+                    line=dict(color='black', width=2, dash='dash')
+                )]
+            )
+            
+            # Update the layout for each figure
+            fig.update_layout(
+                title=f'Closeness of Matches Over Time Between {combination[0]} and {combination[1]}',
+                xaxis=dict(title='Match Number', color=title_color),
+                yaxis=dict(title='Score Difference (Vorsprung)', color=title_color),
                 legend_title=dict(text='Players'),
                 hovermode='closest'
             )
