@@ -58,7 +58,14 @@ if "messages" not in st.session_state:
 if "memory" not in st.session_state:
     st.session_state.memory = ConversationBufferMemory(memory_key="chat_history")
 
-# Use the memory state in AgentExecutor
+# Use the memory state in AgentExecutorprompt = prompt.partial(
+llm_with_stop = llm.bind(stop=["\nObservation"])
+prompt="ok"
+agent = {
+    "input": lambda x: x["input"],
+    "agent_scratchpad": lambda x: format_log_to_str(x['intermediate_steps']),
+    "chat_history": lambda x: x["chat_history"]
+} | prompt | llm_with_stop | ReActSingleInputOutputParser()
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, memory=st.session_state.memory)
 
 for message in st.session_state.messages:
