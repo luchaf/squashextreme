@@ -5,7 +5,6 @@ from langchain.agents.output_parsers import ReActSingleInputOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
 from langchain.llms import OpenAI
 from langchain.memory import ConversationBufferMemory
-from langchain.tools.python.tool import PythonAstREPLTool
 from langchain.tools.render import render_text_description
 from langchain import hub
 import streamlit as st
@@ -45,58 +44,8 @@ columns_df_combination_stats = df_combination_stats.columns
 columns_df_streaks = df_streaks.columns
 
 llm = OpenAI(model="gpt-3.5-turbo-instruct", temperature=0, openai_api_key=st.secrets["open_ai_key"])
-tools = load_tools(["llm-math", "wikipedia", "terminal"], llm=llm)
-python = PythonAstREPLTool(locals={"df_tmp": df_tmp,
-                                   "df_players_stats": df_players_stats,
-                                   "df_combination_stats": df_combination_stats,
-                                   "df_streaks": df_streaks,
-                                  })
-python_pandas_tool = Tool(
-            name="pythonastrepltool",
-            func=python.run,
-    description = f"""     
-        # If you want to create your own analysis, you could just access the df dataframe directly.
-        # If you want to use existing statistics, like win or loss streaks you could use the streaks dataframe.
-        
-        Here is a description of the df_tmp dataframe:
-        The df_tmp dataframe has the following columns: {columns_df_tmp}.
-        Each row of the df_tmp dataset represents the outcome of a squash game.
-        The 'First Name' column contains the name of the first player.
-        The 'Second Name' column contains the name of the second player.
-        The "First Score" column contains the score of the first player.
-        The "Second Score" column contains the score of the second player.
-        The "date" column is the date on which the game was played.
-                
-        Here is a description of the 'df_players_stats' dataframe: 
-        The 'df_players_stats' columns are: {columns_df_players_stats}.
-        The 'df_players_stats' columns represent the number of wins and the total score for each player.
-        The 'df_players_stats' dataframe consists of one row per player. 
-        The index of the dataframe represents the names of the players: Simon, Lucas, and Friedemann. 
-        The 'Wins' column of 'df_players_stats' dataframe contains the number of wins for each player.
-        The 'Total Score' column of 'df_players_stats' dataframe contains the total score for each player. 
-        
-        Here is a description of the 'df_combination_stats' dataframe: 
-        The 'df_combination_stats' columns are: {columns_df_combination_stats}
-        The dataframe 'df_combination_stats' contains statistics about different player combinations in a game. 
-        Each row represents a unique pair of players, indicated by the 'Player Combo' column. 
-        The 'Total Score A' and 'Total Score B' columns represent the total 
-        scores of the first and second players in the pair, respectively. 
-        The 'Wins A' and 'Wins B' columns represent the number of wins for the first and second players, respectively. 
-        The 'Balance' column represents the difference in wins between the two players, 
-        with a negative number indicating that the second player has more wins.
-        
-        Here is a description of the 'df_streaks' dataframe: 
-        The 'df_streaks' columns are: columns_streaks
-        "The 'df_streaks' dataframe contains information about the longest win and loss streaks.
-        Each row represents a different type of streak: the longest win streak and the longest loss streak. 
-        The columns represent the individuals and contain the length of their respective streaks. 
-        
-        All dates in the dataframes are stored like this 20210821 as integers so in the yyyymmdd integers form. 
-        
-        Run python pandas operations on these dataframes to help you get the right answer.
-        """
-        )
-tools.append(python_pandas_tool)
+tools = load_tools(["llm-math", "wikipedia"], llm=llm)
+
 prompt = hub.pull("hwchase17/react-chat")
 prompt = prompt.partial(
     tools=render_text_description(tools),
