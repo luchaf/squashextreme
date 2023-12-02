@@ -39,10 +39,10 @@ with show_me_the_list:
         df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
     df_tmp = df_tmp[["First Name", "First Score", "Second Name", "Second Score", "date"]].reset_index(drop=True).copy()
     df_tmp = df_tmp.rename(columns={
-        "First Name": "p1_n", 
-        "Second Name": "p2_n", 
-        "First Score": "p1_s", 
-        "Second Score": "p2_s", 
+        "First Name": "Player1", 
+        "Second Name": "Player2", 
+        "First Score": "Score1", 
+        "Second Score": "Score2", 
     }).copy()
     st.dataframe(df_tmp)
 
