@@ -48,31 +48,37 @@ with show_me_the_list:
 
     df = df_tmp.copy()
 
-    # Allow users to insert a new row
-    new_row = st.text_input('Insert a new row (e.g., "5, E"):')
-    if new_row:
-        try:
-            values = new_row.split(',')
-            if len(values) == len(df.columns):
-                df = df.append(pd.Series(values, index=df.columns), ignore_index=True)
-                st.dataframe(df)
-            else:
-                st.error("Please enter values for all columns.")
-        except Exception as e:
-            st.error(f"Error inserting row: {str(e)}")
+    # Insert rows interactively
+    if st.button("Insert Row"):
+        new_row = {'Column1': 0, 'Column2': ''}
+        df = df.append(new_row, ignore_index=True)
+        st.dataframe(df)
 
-    # Allow users to delete a row by index
-    delete_index = st.text_input('Delete row by index:')
+    # Delete rows interactively
+    delete_index = st.text_input('Delete row by index (e.g., "0"):')
     if delete_index:
         try:
             index_to_delete = int(delete_index)
             if index_to_delete >= 0 and index_to_delete < len(df):
                 df = df.drop(index_to_delete)
+                df.reset_index(drop=True, inplace=True)  # Reset the index
                 st.dataframe(df)
             else:
                 st.error("Invalid index. Please enter a valid row index.")
+        except ValueError:
+            st.error("Please enter a valid numeric index.")
+
+    # Update values in the DataFrame
+    st.header("Update DataFrame Values")
+    selected_row = st.selectbox("Select a row to update:", range(len(df)))
+    column_to_update = st.selectbox("Select a column to update:", df.columns)
+    new_value = st.text_input("Enter a new value:")
+    if st.button("Update Value"):
+        try:
+            df.at[selected_row, column_to_update] = new_value
+            st.dataframe(df)
         except Exception as e:
-            st.error(f"Error deleting row: {str(e)}")
+            st.error(f"Error updating value: {str(e)}")
 
 
 with online_form:
