@@ -262,7 +262,7 @@ with voice:
                 media_body = MediaFileUpload(temp_audio_file.name, mimetype="audio/mpeg")
                 file_metadata = {
                     "name": "generated_audio.mp3",
-                    "parents": ["test"]
+                    #"parents": ["test"]
                 }
                 drive_service.files().create(
                     body=file_metadata,
