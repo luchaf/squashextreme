@@ -442,7 +442,7 @@ def plot_bars(df2, title_color, player_colors, entity):
         bargap=0.2, # Adjust the spacing between bars
         legend=dict(
         orientation='h',
-        yanchor='bottom',
+        yanchor='top',
         y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
         xanchor='center',
         x=0.5
