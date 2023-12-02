@@ -16,3 +16,4 @@ plotly
 tiktoken 
 wikipedia
 numexpr
+googleapiclient
