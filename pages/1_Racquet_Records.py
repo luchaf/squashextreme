@@ -267,11 +267,11 @@ with voice:
                 media_body = {"name": "generated_audio.mp3", "parents": ["test"]}
                 media = drive_service.files().create(
                     media_body=media_body,
-                    media_file=temp_audio_file.name
+                    media_filename=temp_audio_file.name
                 ).execute()
 
                 # Provide a link to the saved audio file
-                st.success(f"Audio saved to Google Drive: {media['webViewLink']}")
+                st.success(f"Audio saved to Google Drive: https://drive.google.com/file/d/{media['id']}/view")
                 
                 # Delete the temporary audio file
                 os.remove(temp_audio_file.name)
