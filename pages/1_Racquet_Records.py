@@ -48,6 +48,35 @@ with show_me_the_list:
     df_tmp.index = df_tmp.index + 1
     st.dataframe(df_tmp)
 
+    df = df_tmp.copy()
+
+    # Allow users to insert a new row
+    new_row = st.text_input('Insert a new row (e.g., "5, E"):')
+    if new_row:
+        try:
+            values = new_row.split(',')
+            if len(values) == len(df.columns):
+                df = df.append(pd.Series(values, index=df.columns), ignore_index=True)
+                st.dataframe(df)
+            else:
+                st.error("Please enter values for all columns.")
+        except Exception as e:
+            st.error(f"Error inserting row: {str(e)}")
+
+    # Allow users to delete a row by index
+    delete_index = st.text_input('Delete row by index:')
+    if delete_index:
+        try:
+            index_to_delete = int(delete_index)
+            if index_to_delete >= 0 and index_to_delete < len(df):
+                df = df.drop(index_to_delete)
+                st.dataframe(df)
+            else:
+                st.error("Invalid index. Please enter a valid row index.")
+        except Exception as e:
+            st.error(f"Error deleting row: {str(e)}")
+
+
 with online_form:
     # Define a list of player names
     player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
