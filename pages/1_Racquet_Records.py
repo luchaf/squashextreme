@@ -38,6 +38,12 @@ with show_me_the_list:
     for _, row in df_sheet.iterrows():
         df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
     df_tmp = df_tmp[["First Name", "First Score", "Second Name", "Second Score", "date"]].reset_index(drop=True).copy()
+    df_tmp = df_tmp.rename(columns={
+        "First Name": "p1_n", 
+        "Second Name": "p2_n", 
+        "First Score": "p1_s", 
+        "Second Score": "p2_s", 
+    }).copy()
     # Reset the index to start at 1
     df_tmp.index = df_tmp.index + 1
     st.dataframe(df_tmp)
