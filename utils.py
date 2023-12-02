@@ -277,8 +277,8 @@ def graph_win_and_loss_streaks(df1, title_color):
     ax.spines['right'].set_visible(False)
     ax.spines['bottom'].set_visible(False)
     ax.spines['left'].set_visible(False)
-    ax.tick_params(axis='x', colors=title_color, rotation=0)
-    ax.tick_params(axis='y', colors=title_color)
+    ax.tick_params(axis='x', rotation=0)
+    ax.tick_params(axis='y')
 
     # Ensure y-axis has integer ticks only
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
