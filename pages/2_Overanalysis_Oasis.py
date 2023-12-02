@@ -107,7 +107,9 @@ with settings_tab:
           'Peter': color_peter,
           'Tobias': color_tobias,          
         }
-        title_color = 'black'
+        #title_color = 'black'
+        # A color that works on both dark and light backgrounds
+        title_color = '#CCCCCC'
 
     if df.empty:
         st.warning('Please select at least one valid matchday.')
