@@ -12,6 +12,23 @@ from datetime import date
 
 import matplotlib.pyplot as plt
 
+from streamlit.config import get_option
+
+
+# Function to determine if the theme is dark
+def is_dark_theme():
+    # Get the background color for the current theme
+    bg_color = st.get_option("theme.backgroundColor")
+    # Assuming that the dark theme has a darker background color than light theme
+    # We convert the hex color to an RGB tuple and calculate the brightness
+    bg_color = bg_color.lstrip('#')
+    r, g, b = tuple(int(bg_color[i:i+2], 16) for i in (0, 2, 4))
+    brightness = 0.299*r + 0.587*g + 0.114*b
+    return brightness < 128  # Dark theme if brightness is less than 128
+
+# Define title color based on the theme
+title_color = "#FFFFFF" if is_dark_theme() else "#000000"
+
 # Streamlit app
 st.title('Overanalysis Oasis')
 
@@ -109,7 +126,7 @@ with settings_tab:
         }
         #title_color = 'black'
         # A color that works on both dark and light backgrounds
-        title_color = '#CCCCCC'
+        #title_color = '#CCCCCC'
 
     if df.empty:
         st.warning('Please select at least one valid matchday.')
