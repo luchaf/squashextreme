@@ -12,6 +12,8 @@ from utils import (extract_data_from_games, get_name_opponent_name_df, get_name_
                    plot_bars, cumulative_wins_over_time, entities_face_to_face_over_time, closeness_of_matches_over_time)
 import pandas as pd
 from datetime import date
+from pathlib import Path
+from openai import OpenAI
 
 (
     show_me_the_list,
@@ -212,3 +214,42 @@ with email:
 
 with voice:
     st.title("Tell me the result")
+
+    # Initialize OpenAI client
+    api_key = st.secrets["open_ai_key"]
+    client = OpenAI(api_key)
+
+    # Function to generate speech and save it to a file
+    def generate_speech(text):
+        speech_file_path = Path("speech.mp3")
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=text
+        )
+
+        response.stream_to_file(speech_file_path)
+        return speech_file_path
+
+    # Streamlit app title
+    st.title("Text to Speech Conversion")
+
+    # User input for text to convert to speech
+    text_input = st.text_area("Enter the text you want to convert to speech:")
+
+    # Button to trigger text-to-speech conversion
+    if st.button("Convert to Speech"):
+        if text_input:
+            try:
+                # Generate speech from the input text
+                speech_file_path = generate_speech(text_input)
+                
+                # Display the audio player to play the generated speech
+                st.audio(speech_file_path, format="audio/mp3")
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+        else:
+            st.warning("Please enter text to convert.")
+
+    # Display instructions
+    st.info("Enter text and click 'Convert to Speech' to generate speech using the OpenAI GPT-3 API.")
