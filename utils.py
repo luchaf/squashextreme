@@ -282,15 +282,14 @@ def graph_win_and_loss_streaks(df1, title_color):
     # Create the figure with the data
     fig = go.Figure(data=data)
 
-    # Update layout for aesthetics and labels
+    # Update layout for aesthetics and labels, removing the title
     fig.update_layout(
-        title='',
-        title_font=dict(size=16),
-        yaxis=dict(title='Number of Matches', titlefont=dict(size=14)),
-        xaxis=dict(title='Players', titlefont=dict(size=14)),
+        yaxis=dict(title='Number of Matches', titlefont=dict(size=14, color=title_color)),
+        xaxis=dict(title='Players', titlefont=dict(size=14, color=title_color)),
         plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
-        margin=dict(l=10, r=10, t=10, b=10),
+        font=dict(color=title_color),
+        margin=dict(l=10, r=10, t=10, b=10), # Adjust margins if necessary
         bargap=0.2, # Adjust the spacing between bars
         showlegend=False
     )
