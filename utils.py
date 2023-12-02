@@ -285,13 +285,20 @@ def graph_win_and_loss_streaks(df1, title_color):
     # Update layout for aesthetics and labels, removing the title
     fig.update_layout(
         yaxis=dict(title='Number of Matches', fixedrange=True, titlefont=dict(size=14, color=title_color)),
-        xaxis=dict(title='Players', fixedrange=True ,titlefont=dict(size=14, color=title_color)),
+        xaxis=dict(title='Players', fixedrange=True ,titlefont=dict(size=14, color=title_color), title_standoff=10),
         plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
         font=dict(color=title_color),
         margin=dict(l=10, r=10, t=10, b=10), # Adjust margins if necessary
         bargap=0.2, # Adjust the spacing between bars
         showlegend=True,
+        legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        xanchor='center',
+        x=0.5
+    ),
     )
 
     # Streamlit Plotly display
@@ -428,11 +435,18 @@ def plot_bars(df2, title_color, player_colors, entity):
     # Update layout for aesthetics and labels
     fig.update_layout(
         yaxis=dict(title=entity, fixedrange=True),
-        xaxis=dict(title='Players', tickangle=-45, fixedrange=True),
+        xaxis=dict(title='Players', tickangle=-45, fixedrange=True, title_standoff=5),
         plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
         margin=dict(l=10, r=10, t=10, b=10),
         bargap=0.2, # Adjust the spacing between bars
+        legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        xanchor='center',
+        x=0.5
+    ),
     )
 
     # Annotations for each bar
@@ -474,7 +488,13 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
         font=dict(color=title_color),
         hovermode='closest',
         legend_title=dict(text='Players'),
-        showlegend=True
+        showlegend=True,legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        xanchor='center',
+        x=0.5
+    ),
     )
 
     # Display the interactive plot
@@ -522,7 +542,13 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
                 xaxis=dict(title='Game Number Between The Two', color=title_color, fixedrange=True),
                 yaxis=dict(title=f'Cumulative {entity}', color=title_color, fixedrange=True),
                 legend_title=dict(text='Players'),
-                hovermode='closest'
+                hovermode='closest',legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        xanchor='center',
+        x=0.5
+    ),
             )
 
             # Display the plot for the current combination
@@ -594,9 +620,17 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
                 xaxis=dict(title='Match Number', color=title_color, fixedrange=True),
                 yaxis=dict(title='Score Difference (Vorsprung)', color=title_color, fixedrange=True),
                 legend_title=dict(text='Players'),
-                hovermode='closest'
+                hovermode='closest',
+                legend=dict(
+        orientation='h',
+        yanchor='bottom',
+        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        xanchor='center',
+        x=0.5
+    ),
             )
 
             # Display the plot for the current combination
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
 
