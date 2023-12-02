@@ -295,33 +295,43 @@ def graph_win_and_loss_streaks(df1, title_color):
     )
 
     # Streamlit Plotly display
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 import altair as alt
 import streamlit as st
 import pandas as pd
 
-def graph_win_and_loss_streaks(df1, title_color):
-    # Melt the DataFrame to long format for Altair
-    df_long = df1.melt('Name', var_name='Streak', value_name='Matches')
+def graph_win_and_loss_streaks(df, title_color):
+    # Define colors for the win and loss streaks
+    win_color = 'green'
+    loss_color = 'red'
 
-    # Define the color scheme for the bars
-    color_scale = alt.Scale(domain=['longest_win_streak', 'longest_loss_streak'],
-                            range=['green', 'red'])
+    # Create Altair chart for win streaks
+    win_streak_chart = alt.Chart(df).mark_bar(color=win_color, xOffset=-10).encode(
+        x=alt.X('Name:N', axis=alt.Axis(title='Player')),  # N for nominal data
+        y=alt.Y('longest_win_streak:Q', axis=alt.Axis(title='Streak Length')),  # Q for quantitative data
+    )
 
-    # Create the bar chart
-    chart = alt.Chart(df_long).mark_bar().encode(
-        x=alt.X('Name:N', axis=alt.Axis(title='Players', titleColor=title_color)),
-        y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches', titleColor=title_color)),
-        color=alt.Color('Streak:N', scale=color_scale, legend=alt.Legend(title="Streak")),
-        # Offset the x position based on the streak to place bars side by side
-        column=alt.Column('Streak:N', header=alt.Header(title=None))
-    ).properties(
-        width=alt.Step(20)  # Control the width of the individual bar
+    # Create Altair chart for loss streaks, offset to the right
+    loss_streak_chart = alt.Chart(df).mark_bar(color=loss_color, xOffset=10).encode(
+        x='Name:N',
+        y=alt.Y('longest_loss_streak:Q', axis=alt.Axis(title='Streak Length')),
+    )
+
+    # Combine the two bar charts
+    final_chart = (loss_streak_chart + win_streak_chart)
+
+    # Configure the overall appearance
+    final_chart = final_chart.configure_axis(
+        titleColor=title_color
+    ).configure_title(
+        color=title_color
+    ).configure_view(
+        strokeOpacity=0  # Transparent border
     )
 
     # Display the chart
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(final_chart, use_container_width=True)
 
 
 
@@ -393,7 +403,7 @@ def plot_player_combo_graph(df, color_map, entity):
     )
 
     # Show the figure
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 
 
@@ -473,9 +483,8 @@ def plot_bars(df2, title_color, player_colors, entity):
             yshift=10
         )
 
-    # Streamlit Plotly display
-    st.plotly_chart(fig, use_container_width=True)
-
+    # When using Streamlit to display the chart
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 
 def cumulative_wins_over_time(df, color_map, title_color, entity):
@@ -507,7 +516,7 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
     )
 
     # Display the interactive plot
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 
 def entities_face_to_face_over_time(df, color_map, title_color, entity):
@@ -555,7 +564,7 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
             )
 
             # Display the plot for the current combination
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 
 def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5):
@@ -627,5 +636,5 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
             )
 
             # Display the plot for the current combination
-            st.plotly_chart(fig)
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
