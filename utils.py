@@ -310,18 +310,18 @@ def graph_win_and_loss_streaks(df1, title_color):
                             range=['green', 'red'])
 
     # Create the bar chart
-    bars = alt.Chart(df_long).mark_bar().encode(
+    chart = alt.Chart(df_long).mark_bar().encode(
         x=alt.X('Name:N', axis=alt.Axis(title='Players')),
         y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches')),
-        color=alt.Color('Streak:N', scale=color_scale),
-        column='Streak:N',
+        color=alt.Color('Streak:N', scale=color_scale, legend=alt.Legend(title="Streak")),
+        column=alt.Column('Streak:N', header=alt.Header(title=None)), # Remove the separate headers
         tooltip=['Name', 'Streak', 'Matches']
     ).properties(
-        width=alt.Step(30)  # Control the width of each bar
+        width=30 # Set the width of each bar
     )
 
     # Display the chart
-    st.altair_chart(bars, use_container_width=True)
+    st.altair_chart(chart, use_container_width=True)
 
 
 def get_colors(players, color_map):
