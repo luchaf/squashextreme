@@ -412,10 +412,12 @@ def plot_bars(df2, title_color, player_colors, entity):
     # Prepare data for Plotly
     data = []
     for idx, player in enumerate(df2.index):
+        # Use bright/neon colors for bars to contrast with the dark background
+        bar_color = player_colors[player] if player_colors[player] else "#FFFFFF" # Default to white if no color provided
         data.append(go.Bar(
             x=[player],
             y=[df2[entity][idx]],
-            marker=dict(color=player_colors[player]),
+            marker=dict(color=bar_color),
             name=player
         ))
 
@@ -424,21 +426,22 @@ def plot_bars(df2, title_color, player_colors, entity):
 
     # Update layout for aesthetics and labels
     fig.update_layout(
-        yaxis=dict(title=entity, titlefont=dict(color=title_color)),
-        xaxis=dict(title='Players', titlefont=dict(color=title_color), tickangle=-45),
-        plot_bgcolor='rgba(0,0,0,0)',
-        paper_bgcolor='rgba(0,0,0,0)',
-        font=dict(color=title_color),
+        yaxis=dict(title=entity, titlefont=dict(color="#FFFFFF")), # White color for better contrast
+        xaxis=dict(title='Players', titlefont=dict(color="#FFFFFF")), # White color for better contrast
+        plot_bgcolor='rgba(0,0,0,0)', # Transparent background for the plot
+        paper_bgcolor='rgba(0,0,0,0.5)', # Semi-transparent dark background for the figure
+        font=dict(color="#FFFFFF"), # White color for better contrast
         margin=dict(l=10, r=10, t=10, b=10),
         bargap=0.2, # Adjust the spacing between bars
     )
 
-    # Annotations for each bar
+    # Annotations for each bar with high contrast colors
     for idx, player in enumerate(df2.index):
         fig.add_annotation(
             x=player,
             y=df2[entity][idx],
             text=str(int(df2[entity][idx])),
+            font=dict(color="#FFFFFF"), # White color for better contrast
             showarrow=False,
             yshift=10
         )
