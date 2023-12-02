@@ -311,7 +311,7 @@ def graph_win_and_loss_streaks(df1, title_color):
 
     # Create the bar chart
     chart = alt.Chart(df_long).mark_bar().encode(
-        x=alt.X('Name:N', axis=alt.Axis(title='Players', titleColor=title_color)),
+        x=alt.X('Name:O', axis=alt.Axis(title='Players', titleColor=title_color)),
         y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches', titleColor=title_color)),
         color=alt.Color('Streak:N', scale=color_scale),
         column=alt.Column('Streak:N', header=alt.Header(title=None)), # Use column to create side by side bars
@@ -324,6 +324,7 @@ def graph_win_and_loss_streaks(df1, title_color):
 
     # Display the chart
     st.altair_chart(chart, use_container_width=True)
+
 
 
 def get_colors(players, color_map):
