@@ -20,15 +20,14 @@ from datetime import date
     email,
     voice,
 ) = st.tabs([
-    "Show me the list",
-    "Online form :gear:",
-    "Upload page :star:",
-    "Email :exploding_head:",
+    "List of recorded matches",
+    "Online form",
+    "Upload page",
+    "Email",
     "Voice",
     ])
 
 with show_me_the_list:
-    ("Show me the list")
     # Load data from database
     df = pd.DataFrame()
     df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
