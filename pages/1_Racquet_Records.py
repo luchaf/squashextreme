@@ -48,31 +48,43 @@ with show_me_the_list:
 
     df = df_tmp.copy()
 
-    # Delete rows interactively
-    delete_index = st.text_input('Delete row by index (e.g., "0"):')
-    if delete_index:
-        try:
-            index_to_delete = int(delete_index)
-            if index_to_delete >= 0 and index_to_delete < len(df):
-                df = df.drop(index_to_delete)
-                df.reset_index(drop=True, inplace=True)  # Reset the index
-                st.dataframe(df)
-            else:
-                st.error("Invalid index. Please enter a valid row index.")
-        except ValueError:
-            st.error("Please enter a valid numeric index.")
+    # Expander for Inserting Rows
+    with st.expander("Insert Row"):
+        new_row = {}
+        for column in df.columns:
+            new_value = st.text_input(f"Enter value for {column}:")
+            new_row[column] = new_value
 
-    # Update values in the DataFrame
-    st.header("Update DataFrame Values")
-    selected_row = st.selectbox("Select a row to update:", range(len(df)))
-    column_to_update = st.selectbox("Select a column to update:", df.columns)
-    new_value = st.text_input("Enter a new value:")
-    if st.button("Update Value"):
-        try:
-            df.at[selected_row, column_to_update] = new_value
+        if st.button("Insert"):
+            df = df.append(new_row, ignore_index=True)
             st.dataframe(df)
-        except Exception as e:
-            st.error(f"Error updating value: {str(e)}")
+
+    # Expander for Deleting Rows
+    with st.expander("Delete Row"):
+        delete_index = st.text_input('Enter row index to delete:')
+        if st.button("Delete"):
+            try:
+                index_to_delete = int(delete_index)
+                if index_to_delete >= 0 and index_to_delete < len(df):
+                    df = df.drop(index_to_delete)
+                    df.reset_index(drop=True, inplace=True)  # Reset the index
+                    st.dataframe(df)
+                else:
+                    st.error("Invalid index. Please enter a valid row index.")
+            except ValueError:
+                st.error("Please enter a valid numeric index.")
+
+    # Expander for Updating Values
+    with st.expander("Update Values"):
+        selected_row = st.selectbox("Select a row to update:", range(len(df)))
+        column_to_update = st.selectbox("Select a column to update:", df.columns)
+        new_value = st.text_input(f"Enter a new value for {column_to_update}:")
+        if st.button("Update"):
+            try:
+                df.at[selected_row, column_to_update] = new_value
+                st.dataframe(df)
+            except Exception as e:
+                st.error(f"Error updating value: {str(e)}")
 
 
 with online_form:
