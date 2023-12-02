@@ -38,6 +38,8 @@ with show_me_the_list:
     for _, row in df_sheet.iterrows():
         df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
     df_tmp = df_tmp[["First Name", "First Score", "Second Name", "Second Score", "date"]].reset_index(drop=True).copy()
+    # Reset the index to start at 1
+    df_tmp.index = df_tmp.index + 1
     st.dataframe(df_tmp)
 
 with online_form:
