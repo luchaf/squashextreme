@@ -284,6 +284,7 @@ def graph_win_and_loss_streaks(df1, title_color):
 
     # Update layout for aesthetics and labels
     fig.update_layout(
+        title='',
         title_font=dict(size=16),
         yaxis=dict(title='Number of Matches', titlefont=dict(size=14)),
         xaxis=dict(title='Players', titlefont=dict(size=14)),
