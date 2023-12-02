@@ -48,12 +48,6 @@ with show_me_the_list:
 
     df = df_tmp.copy()
 
-    # Insert rows interactively
-    if st.button("Insert Row"):
-        new_row = {'Column1': 0, 'Column2': ''}
-        df = df.append(new_row, ignore_index=True)
-        st.dataframe(df)
-
     # Delete rows interactively
     delete_index = st.text_input('Delete row by index (e.g., "0"):')
     if delete_index:
