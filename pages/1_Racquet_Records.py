@@ -221,15 +221,13 @@ with voice:
 
     # Function to generate speech and save it to a file
     def generate_speech(text):
-        speech_file_path = Path("speech.mp3")
         response = client.audio.speech.create(
             model="tts-1",
             voice="alloy",
             input=text
         )
 
-        response.stream_to_file(speech_file_path)
-        return speech_file_path
+        return response
 
     # Streamlit app title
     st.title("Text to Speech Conversion")
@@ -242,10 +240,10 @@ with voice:
         if text_input:
             try:
                 # Generate speech from the input text
-                speech_file_path = generate_speech(text_input)
+                response = generate_speech(text_input)
                 
                 # Display the audio player to play the generated speech
-                st.audio(speech_file_path, format="audio/mp3")
+                st.audio(response.audio, format="audio/mp3")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
         else:
