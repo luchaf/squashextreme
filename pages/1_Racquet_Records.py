@@ -37,6 +37,7 @@ with show_me_the_list:
     df_tmp = pd.DataFrame()
     for _, row in df_sheet.iterrows():
         df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
+    df_tmp = df_tmp[["First Name", "First Score", "Second Name", "Second Score", "date"]].copy()
     st.dataframe(df_tmp)
 
 with online_form:
