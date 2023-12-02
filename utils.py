@@ -424,13 +424,13 @@ def plot_bars(df2, title_color, player_colors, entity):
 
     # Update layout for aesthetics and labels
     fig.update_layout(
-        yaxis=dict(title=entity, titlefont=dict(color=title_color)),
-        xaxis=dict(title='Players', titlefont=dict(color=title_color), tickangle=-45),
-        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background for the plot
-        paper_bgcolor='rgba(0,0,0,0.5)',  # Semi-transparent dark background for the figure
+        yaxis=dict(title=entity, titlefont=dict(color=title_color), tickfont=dict(color=title_color)),
+        xaxis=dict(title='Players', titlefont=dict(color=title_color), tickfont=dict(color=title_color), tickangle=-45),
+        plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
+        paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
         font=dict(color=title_color),
         margin=dict(l=10, r=10, t=10, b=10),
-        bargap=0.2,  # Adjust the spacing between bars
+        bargap=0.2, # Adjust the spacing between bars
     )
 
     # Annotations for each bar with the title_color for high contrast
