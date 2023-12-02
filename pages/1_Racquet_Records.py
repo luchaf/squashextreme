@@ -217,7 +217,7 @@ with voice:
 
     # Initialize OpenAI client
     api_key = st.secrets["open_ai_key"]
-    client = OpenAI(api_key)
+    client = OpenAI(api_key=api_key)
 
     # Function to generate speech and save it to a file
     def generate_speech(text):
