@@ -263,33 +263,6 @@ def graph_win_and_loss_streaks(df1, title_color):
     # Define colors for the win and loss streaks
     colors = {'longest_win_streak': 'green', 'longest_loss_streak': 'red'}
 
-    ax = df1.set_index('Name')[['longest_win_streak', 'longest_loss_streak']].plot(kind='bar', figsize=(10, 6),
-                                                                                   color=[colors[col] for col in
-                                                                                          ['longest_win_streak',
-                                                                                           'longest_loss_streak']])
-    plt.title("Streaks for Players", fontsize=16)
-    plt.ylabel("Number of Matches", fontsize=14)
-    plt.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-
-    # Styling settings
-    ax.set_facecolor((0, 0, 0, 0))
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_visible(False)
-    ax.spines['left'].set_visible(False)
-    ax.tick_params(axis='x', rotation=0)
-    ax.tick_params(axis='y')
-
-    # Ensure y-axis has integer ticks only
-    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-
-    plt.tight_layout()
-    st.pyplot(plt, transparent=True)
-
-def graph_win_and_loss_streaks(df1, title_color):
-    # Define colors for the win and loss streaks
-    colors = {'longest_win_streak': 'green', 'longest_loss_streak': 'red'}
-
     # Prepare data for Plotly
     data = [
         go.Bar(
@@ -312,28 +285,15 @@ def graph_win_and_loss_streaks(df1, title_color):
     # Update layout for aesthetics and labels
     fig.update_layout(
         title='Streaks for Players',
-        title_font=dict(size=16, color=title_color),
-        yaxis=dict(title='Number of Matches', titlefont=dict(size=14, color=title_color)),
-        xaxis=dict(title='Players', titlefont=dict(size=14, color=title_color)),
+        title_font=dict(size=16),
+        yaxis=dict(title='Number of Matches', titlefont=dict(size=14)),
+        xaxis=dict(title='Players', titlefont=dict(size=14)),
         plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
-        font=dict(color=title_color),
         margin=dict(l=10, r=10, t=10, b=10),
         bargap=0.2, # Adjust the spacing between bars
         showlegend=False
     )
-
-    # Annotations for each bar with the title_color for high contrast
-    for bar in fig.data:
-        for idx in range(len(bar.x)):
-            fig.add_annotation(
-                x=bar.x[idx],
-                y=bar.y[idx],
-                text=str(int(bar.y[idx])),
-                font=dict(color=title_color),
-                showarrow=False,
-                yshift=10 if bar.y[idx] > 0 else -10
-            )
 
     # Streamlit Plotly display
     st.plotly_chart(fig, use_container_width=True)
