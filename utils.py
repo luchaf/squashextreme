@@ -284,56 +284,18 @@ def graph_win_and_loss_streaks(df1, title_color):
 
     # Update layout for aesthetics and labels, removing the title
     fig.update_layout(
-        yaxis=dict(title='Number of Matches', titlefont=dict(size=14, color=title_color)),
-        xaxis=dict(title='Players', titlefont=dict(size=14, color=title_color)),
+        yaxis=dict(title='Number of Matches', fixedrange=True, titlefont=dict(size=14, color=title_color)),
+        xaxis=dict(title='Players', fixedrange=True ,titlefont=dict(size=14, color=title_color)),
         plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
         font=dict(color=title_color),
         margin=dict(l=10, r=10, t=10, b=10), # Adjust margins if necessary
         bargap=0.2, # Adjust the spacing between bars
-        showlegend=True
+        showlegend=True,
     )
 
     # Streamlit Plotly display
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
-import altair as alt
-import streamlit as st
-import pandas as pd
-
-def graph_win_and_loss_streaks(df, title_color):
-    # Define colors for the win and loss streaks
-    win_color = 'green'
-    loss_color = 'red'
-
-    # Create Altair chart for win streaks
-    win_streak_chart = alt.Chart(df).mark_bar(color=win_color, xOffset=-10).encode(
-        x=alt.X('Name:N', axis=alt.Axis(title='Player')),  # N for nominal data
-        y=alt.Y('longest_win_streak:Q', axis=alt.Axis(title='Streak Length')),  # Q for quantitative data
-    )
-
-    # Create Altair chart for loss streaks, offset to the right
-    loss_streak_chart = alt.Chart(df).mark_bar(color=loss_color, xOffset=10).encode(
-        x='Name:N',
-        y=alt.Y('longest_loss_streak:Q', axis=alt.Axis(title='Streak Length')),
-    )
-
-    # Combine the two bar charts
-    final_chart = (loss_streak_chart + win_streak_chart)
-
-    # Configure the overall appearance
-    final_chart = final_chart.configure_axis(
-        titleColor=title_color
-    ).configure_title(
-        color=title_color
-    ).configure_view(
-        strokeOpacity=0  # Transparent border
-    )
-
-    # Display the chart
-    st.altair_chart(final_chart, use_container_width=True)
-
-
 
 def get_colors(players, color_map):
     return [color_map[player] for player in players]
@@ -396,8 +358,8 @@ def plot_player_combo_graph(df, color_map, entity):
         bargap=0.15,  # Adjust the gap between bars of adjacent x-ticks
         bargroupgap=0.15, 
         title=f'{entity} Comparison per Player Combination',
-        xaxis=dict(title='Player Combinations'),
-        yaxis=dict(title=f'{entity} Scores'),
+        xaxis=dict(title='Player Combinations', fixedrange=True),
+        yaxis=dict(title=f'{entity} Scores', fixedrange=True),
         hovermode='closest',
         showlegend=False,  # Hiding the legend as the selection is done through multiselect
     )
@@ -465,8 +427,8 @@ def plot_bars(df2, title_color, player_colors, entity):
 
     # Update layout for aesthetics and labels
     fig.update_layout(
-        yaxis=dict(title=entity),
-        xaxis=dict(title='Players', tickangle=-45),
+        yaxis=dict(title=entity, fixedrange=True),
+        xaxis=dict(title='Players', tickangle=-45, fixedrange=True),
         plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
         margin=dict(l=10, r=10, t=10, b=10),
@@ -505,8 +467,8 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
     # Update the layout for the figure
     fig.update_layout(
         title=f'Cumulative {entity} Over Time for Each Player',
-        xaxis=dict(title='Player Game Number', color=title_color),
-        yaxis=dict(title=f'Cumulative {entity}', color=title_color),
+        xaxis=dict(title='Player Game Number', color=title_color, fixedrange=True),
+        yaxis=dict(title=f'Cumulative {entity}', color=title_color, fixedrange=True),
         plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
         paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
         font=dict(color=title_color),
@@ -557,14 +519,14 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
             # Update the layout for each figure
             fig.update_layout(
                 title=f'Cumulative {entity} Between {comb[0]} and {comb[1]}',
-                xaxis=dict(title='Game Number Between The Two', color=title_color),
-                yaxis=dict(title=f'Cumulative {entity}', color=title_color),
+                xaxis=dict(title='Game Number Between The Two', color=title_color, fixedrange=True),
+                yaxis=dict(title=f'Cumulative {entity}', color=title_color, fixedrange=True),
                 legend_title=dict(text='Players'),
                 hovermode='closest'
             )
 
             # Display the plot for the current combination
-            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+            st.plotly_chart(fig, use_container_width=True,config={'displayModeBar': False})
 
 
 def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5):
@@ -629,8 +591,8 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
             # Update the layout for each figure
             fig.update_layout(
                 title=f'Closeness of Matches Over Time Between {combination[0]} and {combination[1]}',
-                xaxis=dict(title='Match Number', color=title_color),
-                yaxis=dict(title='Score Difference (Vorsprung)', color=title_color),
+                xaxis=dict(title='Match Number', color=title_color, fixedrange=True),
+                yaxis=dict(title='Score Difference (Vorsprung)', color=title_color, fixedrange=True),
                 legend_title=dict(text='Players'),
                 hovermode='closest'
             )
