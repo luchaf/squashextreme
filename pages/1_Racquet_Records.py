@@ -62,7 +62,10 @@ with show_me_the_list:
                 if index_to_insert < 0:
                     st.error("Invalid index. Please enter a non-negative index.")
                 else:
-                    df = df.iloc[:index_to_insert].append(new_row, ignore_index=True).append(df.iloc[index_to_insert:], ignore_index=True)
+                    upper_half = df.iloc[:index_to_insert]
+                    lower_half = df.iloc[index_to_insert:]
+                    new_df = pd.concat([upper_half, pd.DataFrame([new_row]), lower_half], ignore_index=True)
+                    df = new_df
                     st.dataframe(df)
             except ValueError:
                 st.error("Please enter a valid numeric index.")
