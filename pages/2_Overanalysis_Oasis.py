@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 # Streamlit app
 st.title('Overanalysis Oasis')
 
+title_color = "#FFFFFF"
+
 # Load data from database
 df = pd.DataFrame()
 df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
@@ -89,23 +91,6 @@ with settings_tab:
                     st.warning(f"No matches between {start_date} and {end_date}.")
 
     with st.expander("Adjust aesthetics"):
-
-        # Assuming you know the theme beforehand (dark or light), you set the title_color manually.
-        # Let's say we are using a dark theme:
-        title_color = "#FFFFFF"  # White for dark theme
-
-        # You could also allow users to switch between themes and set the color accordingly:
-        if 'theme' not in st.session_state:
-            # Default theme is set to 'light'
-            st.session_state['theme'] = 'light'
-
-        # Then, use a button to toggle the theme
-        if st.button('Toggle theme'):
-            st.session_state['theme'] = 'dark' if st.session_state['theme'] == 'light' else 'light'
-
-        # Set the title_color based on the theme
-        title_color = "#FFFFFF" if st.session_state['theme'] == 'dark' else "#000000"
-
         col_friede, col_simon, col_lucas, col_peter, col_tobias = st.columns(5)
         with col_friede:
             color_friedemann = st.color_picker('Friedemann', '#ffc0cb')
