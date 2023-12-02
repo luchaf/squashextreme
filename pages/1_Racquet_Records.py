@@ -44,8 +44,6 @@ with show_me_the_list:
         "First Score": "p1_s", 
         "Second Score": "p2_s", 
     }).copy()
-    # Reset the index to start at 1
-    df_tmp.index = df_tmp.index + 1
     st.dataframe(df_tmp)
 
     df = df_tmp.copy()
