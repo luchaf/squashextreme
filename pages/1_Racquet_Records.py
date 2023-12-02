@@ -224,14 +224,7 @@ with voice:
     api_key = st.secrets["open_ai_key"]
     client = OpenAI(api_key=api_key)
 
-    # Initialize Google Drive API
-    scope = ["https://www.googleapis.com/auth/drive.file"]
-    google_creds_dict = dict(st.secrets["google_creds"])
-    # Create credentials from the dictionary
-    credentials = Credentials.from_service_account_info(google_creds_dict, scopes=scope)
-    drive_service = build("drive", "v3", credentials=credentials)
-
-    # Function to generate speech and save it to a file
+    # Function to generate speech
     def generate_speech(text):
         response = client.audio.speech.create(
             model="tts-1",
@@ -239,7 +232,7 @@ with voice:
             input=text
         )
 
-        return response
+        return response.content
 
     # Streamlit app title
     st.title("Text to Speech Conversion")
@@ -247,37 +240,19 @@ with voice:
     # User input for text to convert to speech
     text_input = st.text_area("Enter the text you want to convert to speech:")
 
-    # Button to trigger text-to-speech conversion and save to Google Drive
-    if st.button("Convert to Speech and Save to Google Drive"):
+    # Button to trigger text-to-speech conversion and play the audio
+    if st.button("Convert to Speech"):
         if text_input:
             try:
                 # Generate speech from the input text
-                response = generate_speech(text_input)
+                audio_content = generate_speech(text_input)
 
-                # Save the audio content to a temporary file
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_audio_file:
-                    temp_audio_file.write(response.content)
-
-                # Upload the audio file to Google Drive
-                media_body = MediaFileUpload(temp_audio_file.name, mimetype="audio/mpeg")
-                file_metadata = {
-                    "name": "generated_audio.mp3",
-                    "parents": ["https://drive.google.com/drive/folders/1CjjjPV399Dbmnli7fLi2htYMIH_U8tvg"]
-                }
-                drive_service.files().create(
-                    body=file_metadata,
-                    media_body=media_body
-                ).execute()
-
-                # Provide a link to the saved audio file
-                st.success("Audio saved to Google Drive.")
-
-                # Delete the temporary audio file
-                os.remove(temp_audio_file.name)
+                # Play the generated speech audio
+                st.audio(audio_content, format="audio/mp3")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
         else:
             st.warning("Please enter text to convert.")
 
     # Display instructions
-    st.info("Enter text and click 'Convert to Speech and Save to Google Drive' to generate speech and save it to Google Drive.")
+    st.info("Enter text and click 'Convert to Speech' to generate and play speech using the OpenAI GPT-3 API.")
