@@ -229,6 +229,11 @@ with voice:
 
         return response
 
+    # Function to save audio content to a file
+    def save_audio_to_file(audio_content, filename):
+        with open(filename, "wb") as f:
+            f.write(audio_content)
+
     # Streamlit app title
     st.title("Text to Speech Conversion")
 
@@ -241,9 +246,13 @@ with voice:
             try:
                 # Generate speech from the input text
                 response = generate_speech(text_input)
-                
+
+                # Save the audio content to a temporary file
+                speech_file_path = Path("speech.mp3")
+                save_audio_to_file(response.content, speech_file_path)
+
                 # Display the audio player to play the generated speech
-                st.audio(response.audio, format="audio/mp3")
+                st.audio(speech_file_path, format="audio/mp3")
             except Exception as e:
                 st.error(f"Error: {str(e)}")
         else:
