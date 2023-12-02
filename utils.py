@@ -267,16 +267,9 @@ def graph_win_and_loss_streaks(df1, title_color):
                                                                                    color=[colors[col] for col in
                                                                                           ['longest_win_streak',
                                                                                            'longest_loss_streak']])
-    plt.title("Streaks for Players", fontsize=16, color=title_color)
-    plt.ylabel("Number of Matches", fontsize=14, color=title_color)
+    plt.title("Streaks for Players", fontsize=16)
+    plt.ylabel("Number of Matches", fontsize=14)
     plt.grid(axis='y', linestyle='--', linewidth=0.7, alpha=0.6)
-
-    # Annotate bars with their values
-    for p in ax.patches:
-        ax.annotate(str(int(p.get_height())), (p.get_x() + p.get_width() / 2., p.get_height()),
-                    ha='center', va='center', fontsize=10, color=title_color,
-                    xytext=(0, 10 if p.get_height() > 0 else -10),
-                    textcoords='offset points')
 
     # Styling settings
     ax.set_facecolor((0, 0, 0, 0))
