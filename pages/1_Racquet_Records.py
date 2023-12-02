@@ -50,14 +50,22 @@ with show_me_the_list:
 
     # Expander for Inserting Rows
     with st.expander("Insert Row"):
+        insert_index = st.text_input('Enter index to insert the row (e.g., "5"):')
         new_row = {}
         for column in df.columns:
             new_value = st.text_input(f"Enter value for {column}:")
             new_row[column] = new_value
 
         if st.button("Insert"):
-            df = df.append(new_row, ignore_index=True)
-            st.dataframe(df)
+            try:
+                index_to_insert = int(insert_index)
+                if index_to_insert < 0:
+                    st.error("Invalid index. Please enter a non-negative index.")
+                else:
+                    df = df.iloc[:index_to_insert].append(new_row, ignore_index=True).append(df.iloc[index_to_insert:], ignore_index=True)
+                    st.dataframe(df)
+            except ValueError:
+                st.error("Please enter a valid numeric index.")
 
     # Expander for Deleting Rows
     with st.expander("Delete Row"):
