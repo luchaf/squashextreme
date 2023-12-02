@@ -440,13 +440,13 @@ def plot_bars(df2, title_color, player_colors, entity):
         paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
         margin=dict(l=10, r=10, t=10, b=10),
         bargap=0.2, # Adjust the spacing between bars
-        legend=dict(
+legend=dict(
         orientation='h',
         yanchor='top',
-        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
         xanchor='center',
         x=0.5
-    ),
+    )
     )
 
     # Annotations for each bar
@@ -487,14 +487,14 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
         paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
         font=dict(color=title_color),
         hovermode='closest',
-        legend_title=dict(text='Players'),
-        showlegend=True,legend=dict(
+        showlegend=True,
+legend=dict(
         orientation='h',
-        yanchor='bottom',
-        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        yanchor='top',
+        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
         xanchor='center',
         x=0.5
-    ),
+    )
     )
 
     # Display the interactive plot
@@ -541,11 +541,10 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
                 title=f'Cumulative {entity} Between {comb[0]} and {comb[1]}',
                 xaxis=dict(title='Game Number Between The Two', color=title_color, fixedrange=True),
                 yaxis=dict(title=f'Cumulative {entity}', color=title_color, fixedrange=True),
-                legend_title=dict(text='Players'),
                 hovermode='closest',legend=dict(
         orientation='h',
-        yanchor='bottom',
-        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        yanchor='top',
+        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
         xanchor='center',
         x=0.5
     ),
@@ -623,8 +622,8 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
                 hovermode='closest',
                 legend=dict(
         orientation='h',
-        yanchor='bottom',
-        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
+        yanchor='top',
+        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
         xanchor='center',
         x=0.5
     ),
