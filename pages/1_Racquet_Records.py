@@ -255,4 +255,4 @@ with voice:
             st.warning("Please enter text to convert.")
 
     # Display instructions
-    st.info("Enter text and click 'Convert to Speech' to generate and play speech using the OpenAI GPT-3 API.")
+    st.info("Enter text and click 'Convert to Speech' to generate and play speech.")
