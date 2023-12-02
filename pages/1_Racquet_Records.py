@@ -228,7 +228,7 @@ with voice:
     def generate_speech(text):
         response = client.audio.speech.create(
             model="tts-1",
-            voice="alloy",
+            voice="onyx",
             input=text
         )
 
