@@ -311,29 +311,17 @@ def graph_win_and_loss_streaks(df1, title_color):
 
     # Create the bar chart
     bars = alt.Chart(df_long).mark_bar().encode(
-        x=alt.X('Name:N', axis=alt.Axis(title='Players', titleColor=title_color)),
-        y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches', titleColor=title_color)),
+        x=alt.X('Name:N', axis=alt.Axis(title='Players')),
+        y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches')),
         color=alt.Color('Streak:N', scale=color_scale),
+        column='Streak:N',
         tooltip=['Name', 'Streak', 'Matches']
-    )
-
-    # Add text labels for bar values
-    text = bars.mark_text(
-        align='center',
-        baseline='bottom',
-        dy=-5  # Nudge text up so it doesn't appear on top of the bars
-    ).encode(
-        text='Matches:Q'
-    )
-
-    # Combine the bars and text
-    chart = (bars + text).properties(
-        width=600,
-        height=400
+    ).properties(
+        width=alt.Step(30)  # Control the width of each bar
     )
 
     # Display the chart
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(bars, use_container_width=True)
 
 
 def get_colors(players, color_map):
