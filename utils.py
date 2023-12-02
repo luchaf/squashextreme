@@ -291,7 +291,7 @@ def graph_win_and_loss_streaks(df1, title_color):
         font=dict(color=title_color),
         margin=dict(l=10, r=10, t=10, b=10), # Adjust margins if necessary
         bargap=0.2, # Adjust the spacing between bars
-        showlegend=False
+        showlegend=True
     )
 
     # Streamlit Plotly display
