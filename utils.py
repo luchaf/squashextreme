@@ -311,13 +311,15 @@ def graph_win_and_loss_streaks(df1, title_color):
 
     # Create the bar chart
     chart = alt.Chart(df_long).mark_bar().encode(
-        x=alt.X('Name:N', axis=alt.Axis(title='Players')),
-        y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches')),
-        color=alt.Color('Streak:N', scale=color_scale, legend=alt.Legend(title="Streak")),
-        column=alt.Column('Streak:N', header=alt.Header(title=None)), # Remove the separate headers
+        x=alt.X('Name:N', axis=alt.Axis(title='Players', titleColor=title_color)),
+        y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches', titleColor=title_color)),
+        color=alt.Color('Streak:N', scale=color_scale),
+        column=alt.Column('Streak:N', header=alt.Header(title=None)), # Use column to create side by side bars
         tooltip=['Name', 'Streak', 'Matches']
     ).properties(
         width=30 # Set the width of each bar
+    ).configure_view(
+        strokeOpacity=0 # Remove the stroke between side by side bars
     )
 
     # Display the chart
