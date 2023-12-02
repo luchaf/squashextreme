@@ -264,15 +264,19 @@ with voice:
                     temp_audio_file.write(response.content)
 
                 # Upload the audio file to Google Drive
-                media_body = {"name": "generated_audio.mp3", "parents": ["test"]}
-                media = drive_service.files().create(
-                    media_body=media_body,
-                    media_filename=temp_audio_file.name
+                media_body = MediaFileUpload(temp_audio_file.name, mimetype="audio/mpeg")
+                file_metadata = {
+                    "name": "generated_audio.mp3",
+                    "parents": ["test"]
+                }
+                drive_service.files().create(
+                    body=file_metadata,
+                    media_body=media_body
                 ).execute()
 
                 # Provide a link to the saved audio file
-                st.success(f"Audio saved to Google Drive: https://drive.google.com/file/d/{media['id']}/view")
-                
+                st.success("Audio saved to Google Drive.")
+
                 # Delete the temporary audio file
                 os.remove(temp_audio_file.name)
             except Exception as e:
