@@ -297,6 +297,44 @@ def graph_win_and_loss_streaks(df1, title_color):
     # Streamlit Plotly display
     st.plotly_chart(fig, use_container_width=True)
 
+import altair as alt
+import streamlit as st
+import pandas as pd
+
+def graph_win_and_loss_streaks(df1, title_color):
+    # Melt the DataFrame to long format for Altair
+    df_long = df1.melt('Name', var_name='Streak', value_name='Matches')
+
+    # Define the color scheme for the bars
+    color_scale = alt.Scale(domain=['longest_win_streak', 'longest_loss_streak'],
+                            range=['green', 'red'])
+
+    # Create the bar chart
+    bars = alt.Chart(df_long).mark_bar().encode(
+        x=alt.X('Name:N', axis=alt.Axis(title='Players', titleColor=title_color)),
+        y=alt.Y('Matches:Q', axis=alt.Axis(title='Number of Matches', titleColor=title_color)),
+        color=alt.Color('Streak:N', scale=color_scale),
+        tooltip=['Name', 'Streak', 'Matches']
+    )
+
+    # Add text labels for bar values
+    text = bars.mark_text(
+        align='center',
+        baseline='bottom',
+        dy=-5  # Nudge text up so it doesn't appear on top of the bars
+    ).encode(
+        text='Matches:Q'
+    )
+
+    # Combine the bars and text
+    chart = (bars + text).properties(
+        width=600,
+        height=400
+    )
+
+    # Display the chart
+    st.altair_chart(chart, use_container_width=True)
+
 
 def get_colors(players, color_map):
     return [color_map[player] for player in players]
