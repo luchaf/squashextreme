@@ -12,23 +12,6 @@ from datetime import date
 
 import matplotlib.pyplot as plt
 
-from streamlit.config import get_option
-
-
-# Function to determine if the theme is dark
-def is_dark_theme():
-    # Get the background color for the current theme
-    bg_color = st.get_option("theme.backgroundColor")
-    # Assuming that the dark theme has a darker background color than light theme
-    # We convert the hex color to an RGB tuple and calculate the brightness
-    bg_color = bg_color.lstrip('#')
-    r, g, b = tuple(int(bg_color[i:i+2], 16) for i in (0, 2, 4))
-    brightness = 0.299*r + 0.587*g + 0.114*b
-    return brightness < 128  # Dark theme if brightness is less than 128
-
-# Define title color based on the theme
-title_color = "#FFFFFF" if is_dark_theme() else "#000000"
-
 # Streamlit app
 st.title('Overanalysis Oasis')
 
@@ -106,6 +89,23 @@ with settings_tab:
                     st.warning(f"No matches between {start_date} and {end_date}.")
 
     with st.expander("Adjust aesthetics"):
+
+        # Assuming you know the theme beforehand (dark or light), you set the title_color manually.
+        # Let's say we are using a dark theme:
+        title_color = "#FFFFFF"  # White for dark theme
+
+        # You could also allow users to switch between themes and set the color accordingly:
+        if 'theme' not in st.session_state:
+            # Default theme is set to 'light'
+            st.session_state['theme'] = 'light'
+
+        # Then, use a button to toggle the theme
+        if st.button('Toggle theme'):
+            st.session_state['theme'] = 'dark' if st.session_state['theme'] == 'light' else 'light'
+
+        # Set the title_color based on the theme
+        title_color = "#FFFFFF" if st.session_state['theme'] == 'dark' else "#000000"
+
         col_friede, col_simon, col_lucas, col_peter, col_tobias = st.columns(5)
         with col_friede:
             color_friedemann = st.color_picker('Friedemann', '#ffc0cb')
