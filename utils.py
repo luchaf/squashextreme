@@ -292,13 +292,13 @@ def graph_win_and_loss_streaks(df1, title_color):
         margin=dict(l=10, r=10, t=10, b=10), # Adjust margins if necessary
         bargap=0.2, # Adjust the spacing between bars
         showlegend=True,
-        legend=dict(
-        orientation='h',
-        yanchor='bottom',
-        y=-0.3, # This value may need to be adjusted depending on the exact layout of your chart
-        xanchor='center',
-        x=0.5
-    ),
+                legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
+        ),
     )
 
     # Streamlit Plotly display
@@ -434,29 +434,19 @@ def plot_bars(df2, title_color, player_colors, entity):
     # Update layout for aesthetics and labels
     fig.update_layout(
         yaxis=dict(title=entity, fixedrange=True),
-        xaxis=dict(title='Players', tickangle=-45, fixedrange=True, title_standoff=5),
-        plot_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the plot
-        paper_bgcolor='rgba(0,0,0,0)', # Fully transparent background for the paper
-        margin=dict(l=10, r=10, t=10, b=10),
-        bargap=0.2, # Adjust the spacing between bars
-legend=dict(
-        orientation='h',
-        yanchor='top',
-        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
-        xanchor='center',
-        x=0.5
+        xaxis=dict(title='Players', tickangle=-45, fixedrange=True, title_standoff=25),  # Increased standoff for clarity
+        plot_bgcolor='rgba(0,0,0,0)',  # Fully transparent background for the plot
+        paper_bgcolor='rgba(0,0,0,0)',  # Fully transparent background for the paper
+        margin=dict(l=10, r=10, t=10, b=80),  # Increased bottom margin to accommodate legend
+        bargap=0.2,  # Adjust the spacing between bars
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
+        )
     )
-    )
-
-    # # Annotations for each bar
-    # for idx, player in enumerate(df2.index):
-    #     fig.add_annotation(
-    #         x=player,
-    #         y=df2[entity][idx],
-    #         text=str(int(df2[entity][idx])),
-    #         showarrow=False,
-    #         yshift=10
-    #     )
 
     # When using Streamlit to display the chart
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
@@ -487,13 +477,13 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
         font=dict(color=title_color),
         hovermode='closest',
         showlegend=True,
-legend=dict(
-        orientation='h',
-        yanchor='top',
-        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
-        xanchor='center',
-        x=0.5
-    )
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
+        )
     )
 
     # Display the interactive plot
@@ -535,9 +525,9 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
         legend=dict(
             orientation='h',
             yanchor='bottom',
-            y=1.02,
-            xanchor='right',
-            x=1
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
         )
     )
 
@@ -593,9 +583,9 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
         legend=dict(
             orientation='h',
             yanchor='bottom',
-            y=1.02,
-            xanchor='right',
-            x=1
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
         )
     )
 
@@ -645,13 +635,14 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
                 title=f'Cumulative {entity} Between {comb[0]} and {comb[1]}',
                 xaxis=dict(title='Game Number Between The Two', color=title_color, fixedrange=True),
                 yaxis=dict(title=f'Cumulative {entity}', color=title_color, fixedrange=True),
-                hovermode='closest',legend=dict(
-        orientation='h',
-        yanchor='top',
-        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
-        xanchor='center',
-        x=0.5
-    ),
+                hovermode='closest',
+                        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
+        ),
             )
 
             # Display the plot for the current combination
@@ -724,13 +715,13 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
                 yaxis=dict(title='Score Difference (Vorsprung)', color=title_color, fixedrange=True),
                 legend_title=dict(text='Players'),
                 hovermode='closest',
-                legend=dict(
-        orientation='h',
-        yanchor='top',
-        y=1.1,  # You can increase this value if you need more space between the top of the chart and the legend
-        xanchor='center',
-        x=0.5
-    ),
+                        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=-0.5,  # Adjust this value as needed to place the legend under the X-axis title
+            xanchor='center',
+            x=0.5
+        ),
             )
 
             # Display the plot for the current combination
