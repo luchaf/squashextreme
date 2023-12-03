@@ -567,7 +567,7 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
             mode='lines+markers',
             name=name,
             line=dict(color=color_map[name], width=4),
-            marker=dict(size=8),
+            marker=dict(size=2),
         ))
 
         # Add a horizontal line for the median win ratio
