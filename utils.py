@@ -449,15 +449,15 @@ legend=dict(
     )
     )
 
-    # Annotations for each bar
-    for idx, player in enumerate(df2.index):
-        fig.add_annotation(
-            x=player,
-            y=df2[entity][idx],
-            text=str(int(df2[entity][idx])),
-            showarrow=False,
-            yshift=10
-        )
+    # # Annotations for each bar
+    # for idx, player in enumerate(df2.index):
+    #     fig.add_annotation(
+    #         x=player,
+    #         y=df2[entity][idx],
+    #         text=str(int(df2[entity][idx])),
+    #         showarrow=False,
+    #         yshift=10
+    #     )
 
     # When using Streamlit to display the chart
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
