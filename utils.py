@@ -415,12 +415,22 @@ def plot_player_combo_graph(df, color_map, entity, relative=False):
             value_a = row[f'{entity} A']
             value_b = row[f'{entity} B']
             total = value_a + value_b
-            percent_a = (value_a / total) * 100 if total > 0 else 0
-            percent_b = (value_b / total) * 100 if total > 0 else 0
 
-            # Determine which player has the larger value or percent and sort accordingly
-            bottom_player, top_player = (player_a, player_b) if (percent_a if relative else value_a) > (percent_b if relative else value_b) else (player_b, player_a)
-            bottom_value, top_value = (percent_a, percent_b) if bottom_player == player_a else (percent_b, percent_a)
+            if relative:
+                # Calculate percentages if relative is True
+                bottom_value = (value_a / total) * 100 if total > 0 else 0
+                top_value = (value_b / total) * 100 if total > 0 else 0
+            else:
+                # Use absolute values if relative is False
+                bottom_value = value_a
+                top_value = value_b
+
+            # Determine which player should be at the bottom or top based on the values
+            bottom_player, top_player = (player_a, player_b) if bottom_value > top_value else (player_b, player_a)
+
+            # Swap values if necessary
+            if bottom_player != player_a:
+                bottom_value, top_value = top_value, bottom_value
 
             # Adding a trace for the bottom player
             fig.add_trace(go.Bar(
