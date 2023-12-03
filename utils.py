@@ -577,19 +577,18 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
             mode='lines',
             name=f'Median {name}',
             line=dict(color=color_map[name], width=2, dash='dash'),
-            hoverinfo='y+name',  # Show only the y value and the trace name on hover
-            text=f'Median Win Ratio: {median_win_ratio:.2f}',  # Text to display on hover, formatted to 2 decimal places
+            hovertemplate=f'Median Win Ratio: {median_win_ratio:.2f}<extra></extra>',  # Custom hover text
         ))
 
     # Update the layout for the figure
     fig.update_layout(
         title='Cumulative Win Ratio Over Time for Each Player',
-        xaxis=dict(title='Player Game Number', color=title_color, fixedrange=True),
-        yaxis=dict(title='Cumulative Win Ratio', color=title_color, fixedrange=True),
+        xaxis=dict(title='Player Game Number', color=title_color),
+        yaxis=dict(title='Cumulative Win Ratio', color=title_color),
         plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
         paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
         font=dict(color=title_color),
-        hovermode='closest',
+        hovermode='x',
         showlegend=True,
         legend=dict(
             orientation='h',
