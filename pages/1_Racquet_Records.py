@@ -4,18 +4,10 @@ from google.oauth2.service_account import Credentials
 from google.oauth2 import service_account
 import tempfile
 import os
-from utils import (extract_data_from_games, get_name_opponent_name_df, get_name_streaks_df,
-                   calculate_combination_stats,
-                   derive_results,
-                   win_loss_trends_plot,
-                   wins_and_losses_over_time_plot,
-                   graph_win_and_loss_streaks,
-                   plot_player_combo_graph,
-                   plot_bars, cumulative_wins_over_time, entities_face_to_face_over_time, closeness_of_matches_over_time)
+from utils import extract_data_from_games
 import pandas as pd
 from datetime import date
 from pathlib import Path
-from openai import OpenAI
 
 (
     show_me_the_list,
