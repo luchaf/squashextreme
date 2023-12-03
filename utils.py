@@ -308,7 +308,7 @@ def get_colors(players, color_map):
     return [color_map[player] for player in players]
 
 # Function to plot the interactive bar chart
-def plot_player_combo_graph(df, color_map, entity):
+def plot_player_combo_graph(df, color_map, entity, relative=False):
     st.title(f'{entity} Comparison per Player Combination')
 
     # Get a list of all players involved
@@ -325,55 +325,54 @@ def plot_player_combo_graph(df, color_map, entity):
     # Initialize the figure
     fig = go.Figure()
 
-    # Adjust the width of the bars and their opacity
-    # Define bar width relative to the number of bars
-    num_bars = len(df.index) * 2  # times 2 for pairs of bars per group
-    bar_width = max(0.35, min(4, 1 / num_bars))  # Adjust the 0.4 for maximum bar width as needed
-    bar_opacity = 0.6  # Set between 0 and 1 to make bars semi-transparent
-
-    # Add bars for each player combination
+    # Loop through each player combination and add bars to the figure
     for idx, row in df.iterrows():
         player_a, player_b = idx
         if player_a in selected_players and player_b in selected_players:
-            # Adding a trace for player A
+            value_a = row[f'{entity} A']
+            value_b = row[f'{entity} B']
+            total = value_a + value_b
+            percent_a = (value_a / total) * 100 if total > 0 else 0
+            percent_b = (value_b / total) * 100 if total > 0 else 0
+
+            # Determine which player has the larger value or percent and sort accordingly
+            bottom_player, top_player = (player_a, player_b) if (percent_a if relative else value_a) > (percent_b if relative else value_b) else (player_b, player_a)
+            bottom_value, top_value = (percent_a, percent_b) if bottom_player == player_a else (percent_b, percent_a)
+
+            # Adding a trace for the bottom player
             fig.add_trace(go.Bar(
                 x=[f'{player_a} vs {player_b}'],
-                y=[row[f'{entity} A']],
-                name=player_a,
-                marker=dict(color=color_map.get(player_a, '#333')),
+                y=[bottom_value],
+                name=bottom_player,
+                marker=dict(color=color_map.get(bottom_player, '#333')),
                 hoverinfo='y+text',
-                hovertext=[f'{entity} for {player_a}'],
-                width=bar_width,
-                opacity=bar_opacity
+                hovertext=[f'{entity} for {bottom_player}: {bottom_value:.2f}' + ('%' if relative else '')],
             ))
-            # Adding a trace for player B
+            # Adding a trace for the top player
             fig.add_trace(go.Bar(
                 x=[f'{player_a} vs {player_b}'],
-                y=[row[f'{entity} B']],
-                name=player_b,
-                marker=dict(color=color_map.get(player_b, '#333')),
+                y=[top_value],
+                name=top_player,
+                marker=dict(color=color_map.get(top_player, '#333')),
                 hoverinfo='y+text',
-                hovertext=[f'{entity} for {player_b}'],
-                width=bar_width,
-                opacity=bar_opacity,
+                hovertext=[f'{entity} for {top_player}: {top_value:.2f}' + ('%' if relative else '')],
                 showlegend=False
             ))
 
-    # Set up the figure layout, adjusting the bargap if necessary
+    # Set up the figure layout for a stacked bar chart
+    y_axis_title = f'{entity} Percentage' if relative else f'{entity} Scores'
+    y_axis_ticksuffix = '%' if relative else ''
     fig.update_layout(
-        barmode='group',
-        bargap=0.15,  # Adjust the gap between bars of adjacent x-ticks
-        bargroupgap=0.15, 
-        title=f'{entity} Comparison per Player Combination',
+        barmode='stack',
+        title=f'{("Relative" if relative else "Absolute")} {entity} Comparison per Player Combination',
         xaxis=dict(title='Player Combinations', fixedrange=True),
-        yaxis=dict(title=f'{entity} Scores', fixedrange=True),
-        hovermode='closest',
-        showlegend=False,  # Hiding the legend as the selection is done through multiselect
+        yaxis=dict(title=y_axis_title, ticksuffix=y_axis_ticksuffix, fixedrange=True),
+        hovermode='x',
+        showlegend=False
     )
 
     # Show the figure
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
-
 
 
 def plot_bars(df2, title_color, player_colors, entity):

@@ -153,18 +153,24 @@ with settings_tab:
                     #st.info(f"...in total: static or over time", icon="❓")
                     wins_all_time_tab, wins_over_time_tab = st.tabs(["static", "over time"])
                     with wins_all_time_tab:
-                        plot_bars(players_stats, title_color, player_colors, "Wins")
-                        plot_bars(players_stats, title_color, player_colors, 'Win Ratio')
+                        wins_abs_all_time, wins_rel_all_time = st.tabs(["absolut", "relative"])
+                        with wins_abs_all_time:
+                            plot_bars(players_stats, title_color, player_colors, "Wins")
+                        with wins_rel_all_time:
+                            plot_bars(players_stats, title_color, player_colors, 'Win Ratio')
 
                     with wins_over_time_tab:
-                        cumulative_wins_over_time(df, player_colors, title_color, "Wins")
-                        cumulative_win_ratio_over_time(df, player_colors, title_color)
+                        wins_abs_over_time, wins_rel_over_time = st.tabs(["absolut", "relative"])
+                        with wins_abs_over_time:
+                            cumulative_wins_over_time(df, player_colors, title_color, "Wins")
+                        with wins_rel_over_time:
+                            cumulative_win_ratio_over_time(df, player_colors, title_color)
 
                 with face_to_face_wins_tab:
                     #st.info(f"...against specific opponents: static or over time", icon="❓")
                     wins_face_to_face_all_time_tab, wins_face_to_face_over_time_tab = st.tabs(["static", "over time"])
                     with wins_face_to_face_all_time_tab:
-                        plot_player_combo_graph(combination_stats, player_colors, "Wins")
+                        plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=True)
                     with wins_face_to_face_over_time_tab:
                         #plot_player_combo_graph(combination_stats, player_colors, "Wins")
                         entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
