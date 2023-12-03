@@ -474,8 +474,8 @@ def cumulative_wins_over_time(df, color_map, title_color, entity):
             y=group[f'Cumulative{entity}'],
             mode='lines+markers',  # Only lines and markers, no text
             name=name,
-            line=dict(color=color_map[name], width=4),
-            marker=dict(size=8),  # Adjust marker size as needed
+            line=dict(color=color_map[name], width=2),
+            marker=dict(size=3),  # Adjust marker size as needed
         ))
 
     # Update the layout for the figure
@@ -519,8 +519,8 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
             y=group['CumulativeWinRatio'],
             mode='lines+markers',
             name=name,
-            line=dict(color=color_map[name], width=4),
-            marker=dict(size=8),
+            line=dict(color=color_map[name], width=2),
+            marker=dict(size=3),
         ))
 
     # Update the layout for the figure
@@ -566,8 +566,8 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
             y=group['CumulativeWinRatio'],
             mode='lines+markers',
             name=name,
-            line=dict(color=color_map[name], width=1),
-            marker=dict(size=2),
+            line=dict(color=color_map[name], width=2),
+            marker=dict(size=3),
         ))
 
         # Add a horizontal line for the median win ratio
