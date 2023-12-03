@@ -194,6 +194,89 @@ def wins_and_losses_over_time_plot(results, player_colors, title_color):
         plt.tight_layout()
         st.pyplot(fig, transparent=True)
 
+def wins_and_losses_over_time_plot(results, player_colors, title_color):
+    # Iterate through each player in the results
+    for player, res in results.items():
+        # Create the figure with Plotly
+        fig = go.Figure()
+
+        # Adding the line chart for wins and losses
+        fig.add_trace(go.Scatter(
+            x=list(range(len(res))),  # Assuming the index represents games played
+            y=res,
+            mode='lines+markers',
+            name=player,
+            line=dict(color=player_colors[player]),
+            marker=dict(symbol='circle')
+        ))
+
+        # Update the layout for aesthetics and labels
+        fig.update_layout(
+            title=dict(text=f"Wins and Losses for {player} Over Time", x=0.5, xanchor='center', font=dict(size=16, color=title_color)),
+            xaxis=dict(title='Games', titlefont=dict(size=14, color=title_color), tickcolor=title_color),
+            yaxis=dict(title='Result', titlefont=dict(size=14, color=title_color), tickvals=[-1, 1], ticktext=['Loss', 'Win'], tickcolor=title_color),
+            plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+            paper_bgcolor='rgba(0,0,0,0)',
+            yaxis_zeroline=False,  # Hide zero line
+            xaxis_zeroline=False,
+            showlegend=False
+        )
+
+        # Update axes properties
+        fig.update_xaxes(showline=True, linewidth=2, linecolor=title_color, mirror=True)
+        fig.update_yaxes(showline=True, linewidth=2, linecolor=title_color, mirror=True)
+
+        # Display the figure using Streamlit
+        st.plotly_chart(fig, use_container_width=True)
+
+def wins_and_losses_over_time_plot(results, player_colors, title_color):
+    # Iterate through each player in the results
+    for player, res in results.items():
+        # Create the figure with Plotly
+        fig = go.Figure()
+
+        # Adding the line chart for wins and losses
+        fig.add_trace(go.Scatter(
+            x=list(range(len(res))),
+            y=res,
+            mode='lines+markers',
+            name=player,
+            line=dict(color=player_colors[player]),
+            marker=dict(symbol='circle')
+        ))
+
+        # Update the layout for aesthetics and labels
+        fig.update_layout(
+            title=dict(text=f"Wins and Losses Over Time", x=0.5, xanchor='center', font=dict(size=16, color=title_color)),
+            xaxis=dict(title='Games', titlefont=dict(size=14, color=title_color), tickcolor=title_color),
+            yaxis=dict(title='Result', titlefont=dict(size=14, color=title_color), tickvals=[-1, 1], ticktext=['Loss', 'Win'], tickcolor=title_color),
+            plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+            paper_bgcolor='rgba(0,0,0,0)',
+            yaxis_zeroline=False,  # Hide zero line
+            xaxis_zeroline=False,
+            showlegend=False
+        )
+
+        # Adding an annotation for the player's name
+        fig.add_annotation(
+            text=player,  # Player's name
+            xref="paper", yref="paper",
+            x=0.5, y=1.07,  # Adjust these positions as needed
+            showarrow=False,
+            font=dict(size=20, color=player_colors[player]),  # Adjust font size and color as needed
+            align="center",
+            xanchor='center',
+            yanchor='bottom'
+        )
+
+        # Update axes properties
+        fig.update_xaxes(showline=True, linewidth=2, linecolor=title_color, mirror=True)
+        fig.update_yaxes(showline=True, linewidth=2, linecolor=title_color, mirror=True)
+
+        # Display the figure using Streamlit
+        st.plotly_chart(fig, use_container_width=True)
+
+
 
 def plot_wins_and_total_scores(df2, title_color):
     # Bar configurations

@@ -31,10 +31,8 @@ for _, row in df_sheet.iterrows():
 (
     settings_tab,
     basic_metrics_tab,
-    intermediate_metrics_tab,
 ) = st.tabs(["Settings :gear:",
-             "Basic Metrics :star:",
-             "Intermediate Metrics :exploding_head:",
+             "Metrics :star:",
              ])
 
 with settings_tab:
@@ -145,7 +143,7 @@ with settings_tab:
         streaks = streaks.sort_values(["longest_win_streak", "longest_loss_streak"], ascending=False)
 
         with basic_metrics_tab:
-            Number_of_Wins_tab, Total_Points_Scored_tab = st.tabs(["# Wins", "# Points Scored"])
+            Number_of_Wins_tab, Win_Streaks_tab, Total_Points_Scored_tab = st.tabs(["Wins", "Win Streaks", "Points Scored"])
             with Number_of_Wins_tab:
                 #st.info(f"How many wins did each player collect...", icon="❓")
                 total_wins_tab, face_to_face_wins_tab = st.tabs(["Total", "Face-to-Face-Feud"])
@@ -175,6 +173,14 @@ with settings_tab:
                         #plot_player_combo_graph(combination_stats, player_colors, "Wins")
                         entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
 
+            with Win_Streaks_tab:
+                st.info(f"Longest number of consecutive wins or losses by each player", icon="❓")
+                static_streaks, over_time_streaks = st.tabs(["Static", "Over Time"])
+                with static_streaks:
+                    graph_win_and_loss_streaks(streaks, title_color)
+                with over_time_streaks:
+                    wins_and_losses_over_time_plot(results, player_colors, title_color)
+                        
             with Total_Points_Scored_tab:
                 #st.info(f"How many points did each player score...", icon="❓")
                 total_score_tab, face_to_face_score_tab = st.tabs(["Total", "Face-to-Face-Feud"])
@@ -194,18 +200,3 @@ with settings_tab:
                         entities_face_to_face_over_time(df, player_colors, title_color, "Player Score")
                     with competitiveness_tab:
                         closeness_of_matches_over_time(df, player_colors, title_color)
-
-        with intermediate_metrics_tab:
-            (streaks_tab,
-             trends_tab) = st.tabs(["Streaks",
-                                    "Trends"])
-            with streaks_tab:
-                st.info(f"Longest number of consecutive wins or losses by each player", icon="❓")
-                static_streaks, over_time_streaks = st.tabs(["Static", "Over Time"])
-                with static_streaks:
-                    graph_win_and_loss_streaks(streaks, title_color)
-                with over_time_streaks:
-                    wins_and_losses_over_time_plot(results, player_colors, title_color)
-            with trends_tab:
-                win_loss_trends_plot(results, player_colors, title_color)
-
