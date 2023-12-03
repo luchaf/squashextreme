@@ -546,6 +546,62 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 
+def cumulative_win_ratio_over_time(df, color_map, title_color):
+    # Initialize a Plotly figure
+    fig = go.Figure()
+
+    # For each player, calculate the cumulative wins and win ratio over their respective game number
+    for name, group in df.groupby('Name'):
+        # Sort the group by game number to ensure the cumulative sum is correct
+        group = group.sort_values('PlayerGameNumber')
+        # Calculate cumulative wins
+        group['CumulativeWins'] = group['Wins'].cumsum()
+        # Calculate the cumulative win ratio
+        group['CumulativeWinRatio'] = group['CumulativeWins'] / group['PlayerGameNumber']
+        # Calculate the median win ratio
+        median_win_ratio = group['CumulativeWinRatio'].median()
+
+        fig.add_trace(go.Scatter(
+            x=group['PlayerGameNumber'],
+            y=group['CumulativeWinRatio'],
+            mode='lines+markers',
+            name=name,
+            line=dict(color=color_map[name], width=4),
+            marker=dict(size=8),
+        ))
+
+        # Add a horizontal line for the median win ratio
+        fig.add_trace(go.Scatter(
+            x=[group['PlayerGameNumber'].min(), group['PlayerGameNumber'].max()],
+            y=[median_win_ratio, median_win_ratio],
+            mode='lines',
+            name=f'{name} Median',
+            line=dict(color=color_map[name], width=2, dash='dash'),
+            showlegend=False  # Optionally set to True if you want each median to appear in the legend
+        ))
+
+    # Update the layout for the figure
+    fig.update_layout(
+        title='Cumulative Win Ratio Over Time for Each Player',
+        xaxis=dict(title='Player Game Number', color=title_color, fixedrange=True),
+        yaxis=dict(title='Cumulative Win Ratio', color=title_color, fixedrange=True),
+        plot_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        font=dict(color=title_color),
+        hovermode='closest',
+        showlegend=True,
+        legend=dict(
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1
+        )
+    )
+
+    # Display the interactive plot
+    st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
 
 
 def entities_face_to_face_over_time(df, color_map, title_color, entity):
