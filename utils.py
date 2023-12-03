@@ -559,7 +559,7 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
         # Calculate the cumulative win ratio
         group['CumulativeWinRatio'] = group['CumulativeWins'] / group['PlayerGameNumber']
         # Calculate the median win ratio
-        median_win_ratio = group['CumulativeWinRatio'].mean()
+        median_win_ratio = group['CumulativeWinRatio'].median()
 
         fig.add_trace(go.Scatter(
             x=group['PlayerGameNumber'],
@@ -575,9 +575,10 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
             x=[group['PlayerGameNumber'].min(), group['PlayerGameNumber'].max()],
             y=[median_win_ratio, median_win_ratio],
             mode='lines',
-            name=f'{name} Median',
+            name=f'Median {name}',
             line=dict(color=color_map[name], width=2, dash='dash'),
-            showlegend=False  # Optionally set to True if you want each median to appear in the legend
+            hoverinfo='y+name',  # Show only the y value and the trace name on hover
+            text=f'Median Win Ratio: {median_win_ratio:.2f}',  # Text to display on hover, formatted to 2 decimal places
         ))
 
     # Update the layout for the figure
@@ -601,6 +602,7 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
 
     # Display the interactive plot
     st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
+
 
 
 
