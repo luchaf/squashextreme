@@ -2,8 +2,6 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
 import tempfile
 import os
 from utils import (extract_data_from_games, get_name_opponent_name_df, get_name_streaks_df,
@@ -18,7 +16,6 @@ import pandas as pd
 from datetime import date
 from pathlib import Path
 from openai import OpenAI
-
 
 (
     show_me_the_list,
