@@ -168,7 +168,12 @@ with settings_tab:
                     #st.info(f"...against specific opponents: static or over time", icon="❓")
                     wins_face_to_face_all_time_tab, wins_face_to_face_over_time_tab = st.tabs(["static", "over time"])
                     with wins_face_to_face_all_time_tab:
-                        plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=True)
+                        wins_ftf_abs_all_time, wins_ftf_rel_all_time = st.tabs(["absolut", "relative"])
+                        with wins_ftf_abs_all_time:
+                            plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=False)
+                        with wins_ftf_rel_all_time:
+                            plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=True)
+                            
                     with wins_face_to_face_over_time_tab:
                         #plot_player_combo_graph(combination_stats, player_colors, "Wins")
                         entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
