@@ -566,7 +566,7 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
             y=group['CumulativeWinRatio'],
             mode='lines+markers',
             name=name,
-            line=dict(color=color_map[name], width=4),
+            line=dict(color=color_map[name], width=1),
             marker=dict(size=2),
         ))
 
