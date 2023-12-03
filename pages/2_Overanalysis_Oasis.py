@@ -125,8 +125,15 @@ with settings_tab:
         df = get_name_opponent_name_df(df)
 
         # Calculate individual stats
-        players_stats = df.groupby('Name').agg({'Wins': 'sum', 'Player Score': 'sum'}).rename(
+        players_stats = df.groupby('Name').agg({'Wins': 'sum', 'Player Score': 'sum', 'PlayerGameNumber': 'max'}).rename(
             columns={'Player Score': 'Total Score'}).sort_values("Wins", ascending=False)
+
+        # Calculate the relative win ratio (Wins / Games Played)
+        players_stats['Win Ratio'] = players_stats['Wins'] / players_stats['PlayerGameNumber']
+
+        # Replace any potential NaN values with 0 (in case of division by zero)
+        players_stats['Win Ratio'].fillna(0, inplace=True)
+
 
         # Derive results
         results = derive_results(df)
@@ -146,6 +153,8 @@ with settings_tab:
                     wins_all_time_tab, wins_over_time_tab = st.tabs(["static", "over time"])
                     with wins_all_time_tab:
                         plot_bars(players_stats, title_color, player_colors, "Wins")
+                        plot_bars(players_stats, title_color, player_colors, 'Win Ratio')
+
                     with wins_over_time_tab:
                         cumulative_wins_over_time(df, player_colors, title_color, "Wins")
                 with face_to_face_wins_tab:
