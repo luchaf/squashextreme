@@ -559,7 +559,7 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
         # Calculate the cumulative win ratio
         group['CumulativeWinRatio'] = group['CumulativeWins'] / group['PlayerGameNumber']
         # Calculate the median win ratio
-        median_win_ratio = group['CumulativeWinRatio'].median()
+        median_win_ratio = group['CumulativeWinRatio'].mean()
 
         fig.add_trace(go.Scatter(
             x=group['PlayerGameNumber'],
