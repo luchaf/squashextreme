@@ -636,8 +636,8 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
                     y=player_data[f'Cumulative{entity}'],
                     mode='lines+markers',
                     name=player,
-                    line=dict(color=color_map[player], width=4),
-                    marker=dict(size=8),
+                    line=dict(color=color_map[player], width=2),
+                    marker=dict(size=3),
                     showlegend=True
                 ))
 
@@ -681,8 +681,8 @@ def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5)
                 y=combination_df['Score Difference'],
                 mode='lines+markers',
                 name=f'{combination[0]} vs {combination[1]}',
-                line=dict(color=color_map[combination[0]], width=4),
-                marker=dict(size=8),
+                line=dict(color=color_map[combination[0]], width=2),
+                marker=dict(size=3),
                 showlegend=True
             ))
             
