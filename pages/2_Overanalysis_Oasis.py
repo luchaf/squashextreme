@@ -6,7 +6,7 @@ from utils import (extract_data_from_games, get_name_opponent_name_df, get_name_
                    graph_win_and_loss_streaks,
                    plot_player_combo_graph,
                    plot_bars, cumulative_wins_over_time, cumulative_win_ratio_over_time,
-                   entities_face_to_face_over_time, closeness_of_matches_over_time)
+                   entities_face_to_face_over_time_abs, entities_face_to_face_over_time_rel, closeness_of_matches_over_time)
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -174,8 +174,12 @@ with settings_tab:
                         with wins_ftf_rel_all_time:
                             plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=True)
                     with wins_face_to_face_over_time_tab:
-                        #plot_player_combo_graph(combination_stats, player_colors, "Wins")
-                        entities_face_to_face_over_time(df, player_colors, title_color, "Wins")
+                        wins_ftf_abs_over_time, wins_ftf_rel_over_time = st.tabs(["absolut", "relative"])
+                        with wins_ftf_abs_over_time:
+                            #plot_player_combo_graph(combination_stats, player_colors, "Wins")
+                            entities_face_to_face_over_time_abs(df, player_colors, title_color, "Wins")
+                        with wins_ftf_rel_over_time:
+                            entities_face_to_face_over_time_rel(df, player_colors, title_color, "Wins")
 
             with Win_Streaks_tab:
                 st.info(f"Longest number of consecutive wins or losses by each player", icon="❓")
@@ -201,6 +205,6 @@ with settings_tab:
                     with scores_face_to_face_all_time_tab:
                         plot_player_combo_graph(combination_stats, player_colors, "Total Score")
                     with scores_face_to_face_over_time_tab:
-                        entities_face_to_face_over_time(df, player_colors, title_color, "Player Score")
+                        entities_face_to_face_over_time_abs(df, player_colors, title_color, "Player Score")
                     with competitiveness_tab:
                         closeness_of_matches_over_time(df, player_colors, title_color)

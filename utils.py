@@ -688,7 +688,7 @@ def cumulative_win_ratio_over_time(df, color_map, title_color):
 
 
 
-def entities_face_to_face_over_time(df, color_map, title_color, entity):
+def entities_face_to_face_over_time_abs(df, color_map, title_color, entity):
     # Getting unique player combinations
     players = df['Name'].unique()
     all_combinations = list(itertools.combinations(players, 2))
@@ -740,6 +740,54 @@ def entities_face_to_face_over_time(df, color_map, title_color, entity):
 
             # Display the plot for the current combination
             st.plotly_chart(fig, use_container_width=True,config={'displayModeBar': False})
+
+
+def entities_face_to_face_over_time_rel(df, color_map, title_color, entity):
+    players = df['Name'].unique()
+    all_combinations = list(itertools.combinations(players, 2))
+
+    for comb in all_combinations:
+        matched_games = []
+        for i in range(0, len(df) - 1, 2):
+            if set(df.iloc[i:i + 2]['Name']) == set(comb):
+                matched_games.extend([df.iloc[i], df.iloc[i + 1]])
+
+        matched_df = pd.DataFrame(matched_games).reset_index(drop=True)
+
+        if not matched_df.empty:
+            fig = go.Figure()
+
+            for player in comb:
+                player_data = matched_df[matched_df['Name'] == player]
+                total_games = player_data.index // 2 + 1
+                cumulative_wins = player_data[entity].cumsum()
+                win_ratio = cumulative_wins / total_games
+
+                fig.add_trace(go.Scatter(
+                    x=total_games,
+                    y=win_ratio,
+                    mode='lines+markers',
+                    name=player,
+                    line=dict(color=color_map[player], width=2),
+                    marker=dict(size=3),
+                    showlegend=True
+                ))
+
+            fig.update_layout(
+                title=f'Cumulative Win Ratio Between {comb[0]} and {comb[1]}',
+                xaxis=dict(title='Game Number Between The Two', color=title_color, fixedrange=True),
+                yaxis=dict(title=f'Cumulative Win Ratio', color=title_color, fixedrange=True),
+                hovermode='closest',
+                legend=dict(
+                    orientation='h',
+                    yanchor='bottom',
+                    y=-0.5,
+                    xanchor='center',
+                    x=0.5
+                ),
+            )
+
+            st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 
 def closeness_of_matches_over_time(df, color_map, title_color, future_matches=5):
