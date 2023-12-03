@@ -398,7 +398,7 @@ def plot_player_combo_graph(df, color_map, entity, relative=False):
     all_players = sorted(set(idx for idx_pair in df.index for idx in idx_pair))
 
     # Generate a unique key for the multiselect widget based on the entity
-    unique_key = f'player_select_{entity}'
+    unique_key = f'player_select_{entity}_{relative}'
     
     # Use Streamlit's multiselect widget to allow selection of multiple players
     selected_players = st.multiselect(

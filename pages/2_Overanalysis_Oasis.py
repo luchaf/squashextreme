@@ -172,7 +172,7 @@ with settings_tab:
                         with wins_ftf_abs_all_time:
                             plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=False)
                         with wins_ftf_rel_all_time:
-                            #plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=True)
+                            plot_player_combo_graph(combination_stats, player_colors, "Wins", relative=True)
                             st.info("okokok")
                     with wins_face_to_face_over_time_tab:
                         #plot_player_combo_graph(combination_stats, player_colors, "Wins")
