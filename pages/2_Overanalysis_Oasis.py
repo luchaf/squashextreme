@@ -5,7 +5,8 @@ from utils import (extract_data_from_games, get_name_opponent_name_df, get_name_
                    wins_and_losses_over_time_plot,
                    graph_win_and_loss_streaks,
                    plot_player_combo_graph,
-                   plot_bars, cumulative_wins_over_time, entities_face_to_face_over_time, closeness_of_matches_over_time)
+                   plot_bars, cumulative_wins_over_time, cumulative_win_ratio_over_time,
+                   entities_face_to_face_over_time, closeness_of_matches_over_time)
 import streamlit as st
 import pandas as pd
 from datetime import date
@@ -157,6 +158,8 @@ with settings_tab:
 
                     with wins_over_time_tab:
                         cumulative_wins_over_time(df, player_colors, title_color, "Wins")
+                        cumulative_win_ratio_over_time(df, player_colors, title_color)
+
                 with face_to_face_wins_tab:
                     #st.info(f"...against specific opponents: static or over time", icon="❓")
                     wins_face_to_face_all_time_tab, wins_face_to_face_over_time_tab = st.tabs(["static", "over time"])
