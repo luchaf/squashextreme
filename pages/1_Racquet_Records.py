@@ -152,6 +152,8 @@ def upload_page():
             buffered = io.BytesIO()
             image.save(buffered, format="JPEG")
             image = Image.open(buffered)
+        else:
+            image = Image.open(uploaded_file)
 
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
