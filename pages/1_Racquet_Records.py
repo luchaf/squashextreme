@@ -5,6 +5,7 @@ import pandas as pd
 from utils import extract_data_from_games
 from PIL import Image
 import pytesseract
+import io
 
 # Define functions for each tab
 def show_me_the_list():
@@ -141,22 +142,24 @@ def upload_page():
     if uploaded_file is not None:
         # Check the image format
         image_format = uploaded_file.type
-        print(image_format)
+        st.write(image_format)
 
         # Convert to JPEG if it's not in a supported format
         if image_format not in ["image/png", "image/jpeg", "image/jpg"]:
             st.warning("Image format not supported. Converting to JPEG...")
             image = Image.open(uploaded_file)
-            image = image.convert("JPEG")
-        else:
-            image = Image.open(uploaded_file)
+            image = image.convert("RGB")  # Convert to RGB format
+            buffered = io.BytesIO()
+            image.save(buffered, format="JPEG")
+            image = Image.open(buffered)
 
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
         # Continue with pytesseract text extraction
         text_from_images = pytesseract.image_to_string(image, lang='eng')
-        print(text_from_images)
         st.write(text_from_images)
+
+
 
 
 # Create tab names and corresponding functions
