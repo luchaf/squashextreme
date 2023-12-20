@@ -4,6 +4,7 @@ from google.oauth2.service_account import Credentials
 import pandas as pd
 from utils import extract_data_from_games
 from PIL import Image
+import pytesseract
 
 # Define functions for each tab
 def show_me_the_list():
@@ -140,6 +141,10 @@ def upload_page():
     if uploaded_file is not None:
         image = Image.open(uploaded_file)
         st.image(image, caption="Uploaded Image", use_column_width=True)
+        # Read and process each image to extract text
+        text_from_images = pytesseract.image_to_string(image, lang='eng')
+        print(text_from_images)
+        st.write(text_from_images)
 
 # Create tab names and corresponding functions
 tab_names = [
