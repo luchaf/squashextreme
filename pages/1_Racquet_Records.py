@@ -139,12 +139,25 @@ def upload_page():
     st.write("Upload an image:")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
     if uploaded_file is not None:
-        image = Image.open(uploaded_file)
+        # Check the image format
+        image_format = uploaded_file.type
+        print(image_format)
+
+        # Convert to JPEG if it's not in a supported format
+        if image_format not in ["image/png", "image/jpeg", "image/jpg"]:
+            st.warning("Image format not supported. Converting to JPEG...")
+            image = Image.open(uploaded_file)
+            image = image.convert("JPEG")
+        else:
+            image = Image.open(uploaded_file)
+
         st.image(image, caption="Uploaded Image", use_column_width=True)
-        # Read and process each image to extract text
+
+        # Continue with pytesseract text extraction
         text_from_images = pytesseract.image_to_string(image, lang='eng')
         print(text_from_images)
         st.write(text_from_images)
+
 
 # Create tab names and corresponding functions
 tab_names = [
