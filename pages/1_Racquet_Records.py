@@ -1,29 +1,12 @@
 import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
-from google.oauth2 import service_account
-import tempfile
-import os
-from utils import extract_data_from_games
 import pandas as pd
-from datetime import date
-from pathlib import Path
+from utils import extract_data_from_games
+from PIL import Image
 
-(
-    show_me_the_list,
-    online_form,
-    upload_page,
-    email,
-    voice,
-) = st.tabs([
-    "List of recorded matches",
-    "Online form",
-    "Upload page",
-    "Email",
-    "Voice",
-    ])
-
-with show_me_the_list:
+# Define functions for each tab
+def show_me_the_list():
     # Load data from database
     df = pd.DataFrame()
     df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
@@ -41,60 +24,10 @@ with show_me_the_list:
         "Second Score": "Score2", 
     }).copy()
     st.dataframe(df_tmp)
+    
+    return df_tmp
 
-    df = df_tmp.copy()
-
-    # Expander for Inserting Rows
-    with st.expander("Insert Row"):
-        insert_index = st.text_input('Enter index to insert the row (e.g., "5"):')
-        new_row = {}
-        for column in df.columns:
-            new_value = st.text_input(f"Enter value for {column}:")
-            new_row[column] = new_value
-
-        if st.button("Insert"):
-            try:
-                index_to_insert = int(insert_index)
-                if index_to_insert < 0:
-                    st.error("Invalid index. Please enter a non-negative index.")
-                else:
-                    upper_half = df.iloc[:index_to_insert]
-                    lower_half = df.iloc[index_to_insert:]
-                    new_df = pd.concat([upper_half, pd.DataFrame([new_row]), lower_half], ignore_index=True)
-                    df = new_df
-                    st.dataframe(df)
-            except ValueError:
-                st.error("Please enter a valid numeric index.")
-
-    # Expander for Deleting Rows
-    with st.expander("Delete Row"):
-        delete_index = st.text_input('Enter row index to delete:')
-        if st.button("Delete"):
-            try:
-                index_to_delete = int(delete_index)
-                if index_to_delete >= 0 and index_to_delete < len(df):
-                    df = df.drop(index_to_delete)
-                    df.reset_index(drop=True, inplace=True)  # Reset the index
-                    st.dataframe(df)
-                else:
-                    st.error("Invalid index. Please enter a valid row index.")
-            except ValueError:
-                st.error("Please enter a valid numeric index.")
-
-    # Expander for Updating Values
-    with st.expander("Update Values"):
-        selected_row = st.selectbox("Select a row to update:", range(len(df)))
-        column_to_update = st.selectbox("Select a column to update:", df.columns)
-        new_value = st.text_input(f"Enter a new value for {column_to_update}:")
-        if st.button("Update"):
-            try:
-                df.at[selected_row, column_to_update] = new_value
-                st.dataframe(df)
-            except Exception as e:
-                st.error(f"Error updating value: {str(e)}")
-
-
-with online_form:
+def online_form():
     # Define a list of player names
     player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
 
@@ -200,11 +133,31 @@ with online_form:
 
     display_enter_match_results()
 
-with upload_page:
-    st.title("Upload stuff")
+def upload_page():
+    st.title("Upload page")
+    st.write("Upload an image:")
+    uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
+    if uploaded_file is not None:
+        image = Image.open(uploaded_file)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
 
-with email:
-    st.title("Send an Email")
+# Create tab names and corresponding functions
+tab_names = [
+    "List of recorded matches",
+    "Online form",
+    "Upload page",
+]
 
-with voice:
-    st.title("Tell me the result")
+tab_functions = [
+    show_me_the_list,
+    online_form,
+    upload_page,
+]
+
+# Create tabs dynamically
+selected_tab = st.selectbox("Select an option to enter your match result", tab_names)
+tab_index = tab_names.index(selected_tab)
+selected_function = tab_functions[tab_index]
+
+# Execute the selected function
+selected_function()

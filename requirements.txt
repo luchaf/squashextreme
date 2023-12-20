@@ -16,3 +16,5 @@ plotly
 tiktoken 
 wikipedia
 numexpr
+Pillow
+pytesseract
