@@ -147,9 +147,17 @@ def upload_page():
         image = Image.open(io.BytesIO(image_bytes))
         st.image(image, caption="Uploaded Image", use_column_width=True)
 
-        # Continue with pytesseract text extraction
-        text_from_images = pytesseract.image_to_string(image, lang='eng')
-        st.write(text_from_images)
+        # Log the image format for debugging
+        st.write(f"Image format: {image.format}")
+
+        try:
+            # Continue with pytesseract text extraction
+            text_from_images = pytesseract.image_to_string(image, lang='eng')
+            st.write(text_from_images)
+        except Exception as e:
+            # Log any exceptions for debugging
+            st.write(f"An error occurred: {str(e)}")
+
 
 
 # Create tab names and corresponding functions
