@@ -254,7 +254,7 @@ def upload_page():
 
     # Model selection
     st.sidebar.title("Model selection")
-    st.sidebar.markdown("**Backend**: " + ("TensorFlow" if is_tf_available() else "PyTorch"))
+    st.sidebar.markdown("**Backend**: " + "PyTorch")
     det_arch = st.sidebar.selectbox("Text detection model", DET_ARCHS)
     reco_arch = st.sidebar.selectbox("Text recognition model", RECO_ARCHS)
 
