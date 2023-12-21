@@ -2,7 +2,7 @@ altair
 pandas
 pydeck
 streamlit
-matplotlib
+
 gspread
 google-auth 
 google-auth-oauthlib 
