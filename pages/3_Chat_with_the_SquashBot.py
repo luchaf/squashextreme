@@ -125,8 +125,8 @@ if uploaded_file is not None:
 # Model selection
 st.sidebar.title("Model selection")
 st.sidebar.markdown("**Backend**: " + ("TensorFlow" if is_tf_available() else "PyTorch"))
-det_arch = st.sidebar.selectbox("Text detection model", det_archs)
-reco_arch = st.sidebar.selectbox("Text recognition model", reco_archs)
+det_arch = st.sidebar.selectbox("Text detection model", DET_ARCHS)
+reco_arch = st.sidebar.selectbox("Text recognition model", RECO_ARCHS)
 
 # For newline
 st.sidebar.write("\n")
