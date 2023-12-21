@@ -94,8 +94,6 @@ def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.devi
 
 
 def main(det_archs, reco_archs):
-    forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    
     """Build a streamlit layout"""
     # Wide mode
     st.set_page_config(layout="wide")
@@ -120,6 +118,7 @@ def main(det_archs, reco_archs):
     #st.set_option("deprecation.showfileUploaderEncoding", False)
     # Choose your own image
     uploaded_file = st.sidebar.file_uploader("Upload files", type=["pdf", "png", "jpeg", "jpg"])
+    forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     if uploaded_file is not None:
         if uploaded_file.name.endswith(".pdf"):
             doc = DocumentFile.from_pdf(uploaded_file.read())
