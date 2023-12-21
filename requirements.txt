@@ -19,3 +19,4 @@ numexpr
 Pillow
 pytesseract
 python-doctr[torch]
+opencv-python
