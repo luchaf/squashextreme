@@ -225,8 +225,6 @@ def upload_page():
         "parseq",
     ]
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # Designing the interface
-    st.title("docTR: Document Text Recognition")
     # For newline
     st.write("\n")
     # Instructions
