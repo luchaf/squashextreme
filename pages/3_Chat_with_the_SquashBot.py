@@ -92,10 +92,10 @@ def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.devi
 
     return seg_map
 
-    forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
 
 def main(det_archs, reco_archs):
+    forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    
     """Build a streamlit layout"""
     # Wide mode
     st.set_page_config(layout="wide")
