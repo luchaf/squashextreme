@@ -224,7 +224,6 @@ def upload_page():
         "vitstr_base",
         "parseq",
     ]
-    """Build a streamlit layout"""
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # Designing the interface
     st.title("docTR: Document Text Recognition")
