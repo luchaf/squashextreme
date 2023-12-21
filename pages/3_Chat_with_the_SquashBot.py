@@ -92,12 +92,6 @@ def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.devi
 
     return seg_map
 
-
-
-"""Build a streamlit layout"""
-# Wide mode
-st.set_page_config(layout="wide")
-
 # Designing the interface
 st.title("docTR: Document Text Recognition")
 # For newline
