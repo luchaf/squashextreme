@@ -429,10 +429,6 @@ def upload_page():
                     img = out.pages[0].synthesize()
                     cols[3].image(img, clamp=True)
 
-                # Display JSON
-                st.markdown("\nHere are your analysis results in JSON format:")
-                st.json(page_export)
-
                 output_df = create_table(page_export, 0.02, 0.02)
                 st.dataframe(output_df)
 
