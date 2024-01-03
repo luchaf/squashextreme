@@ -20,7 +20,143 @@ from doctr.models.predictor import OCRPredictor
 import io
 import torch
 from doctr.models import ocr_predictor, db_resnet50, crnn_vgg16_bn, parseq
+
+import numpy as np
+import pandas as pd
+from collections import defaultdict
+from sklearn.cluster import DBSCAN
+
+def get_word_list(data):
+    # Initialize an empty list to store "words" key-value pairs
+    words_list = []
+    
+    # Iterate through the blocks in the original dictionary
+    for block in data.get("blocks", []):
+        # Iterate through the lines in each block
+        for line in block.get("lines", []):
+            # Iterate through the words in each line
+            for word in line.get("words", []):
+                words_list.append(word)
                 
+    return words_list
+    
+def calculate_centroids(data):
+    """
+    Calculate the centroids of the geometry in the given data.
+
+    Args:
+        data (list): A list of dictionaries, where each dictionary contains the 'geometry' key.
+
+    Returns:
+        numpy.ndarray: An array of calculated centroids.
+    """
+    return np.array([[
+        (item['geometry'][0][0] + item['geometry'][1][0]) / 2,  # x-coordinate
+        (item['geometry'][0][1] + item['geometry'][1][1]) / 2   # y-coordinate
+    ] for item in data])
+
+def cluster_data(centroids, axis_index, eps):
+    """
+    Cluster the data using DBSCAN based on the specified axis and epsilon.
+
+    Args:
+        centroids (numpy.ndarray): The centroids of the data points.
+        axis_index (int): The axis index (0 for x, 1 for y) to be considered for clustering.
+        eps (float): The maximum distance between two samples for one to be considered as in the neighborhood of the other.
+
+    Returns:
+        tuple: A tuple containing the labels for each point and the centroids of the clusters.
+    """
+    dbscan = DBSCAN(eps=eps, min_samples=3)
+    dbscan.fit(centroids[:, axis_index].reshape(-1, 1))
+    labels = dbscan.labels_
+    unique_labels = np.unique(labels)
+    centroid_points = np.array([np.mean(centroids[labels == label, axis_index]) for label in unique_labels if label != -1])
+    return labels, centroid_points
+
+def get_min_max(data, index):
+    """
+    Get the minimum and maximum values for the specified axis of the geometry.
+
+    Args:
+        data (list): A list of dictionaries, where each dictionary contains the 'geometry' key.
+        index (int): The axis index (0 for x, 1 for y) to consider.
+
+    Returns:
+        tuple: A tuple containing the minimum and maximum values.
+    """
+    return min([item['geometry'][0][index] for item in data]), max([item['geometry'][1][index] for item in data])
+
+def get_grid_position(x, y, min_x, min_y, cell_width, cell_height):
+    """
+    Calculate the row and column position of a point in the grid.
+
+    Args:
+        x (float): The x-coordinate of the point.
+        y (float): The y-coordinate of the point.
+        min_x (float): The minimum x-coordinate of the grid.
+        min_y (float): The minimum y-coordinate of the grid.
+        cell_width (float): The width of a cell in the grid.
+        cell_height (float): The height of a cell in the grid.
+
+    Returns:
+        tuple: A tuple containing the row and column indices.
+    """
+    col = int((x - min_x) / cell_width)
+    row = int((y - min_y) / cell_height)
+    return row, col
+
+def create_table(data, eps_x, eps_y):
+    """
+    Create a table structure from the given data using clustering for row and column determination.
+
+    Args:
+        data (list): A list of dictionaries, where each dictionary represents a word with its geometry and value.
+        eps_x (float): Epsilon value for DBSCAN clustering along the x-axis.
+        eps_y (float): Epsilon value for DBSCAN clustering along the y-axis.
+
+    Returns:
+        pandas.DataFrame: A DataFrame representing the structured table.
+    """
+
+    data = get_word_list(data)
+    
+    # Calculate centroids of the geometries
+    centroids = calculate_centroids(data)
+    
+    # Cluster data along x and y axes
+    labels_x, centroids_x = cluster_data(centroids, 0, eps_x)
+    labels_y, centroids_y = cluster_data(centroids, 1, eps_y)
+    
+    # Determine the number of rows and columns
+    n_rows, n_cols = len(np.unique(labels_y)), len(np.unique(labels_x))
+    
+    # Get minimum and maximum values for x and y coordinates
+    min_x, max_x = get_min_max(data, 0)
+    min_y, max_y = get_min_max(data, 1)
+    
+    # Calculate the width and height of each cell in the grid
+    cell_width, cell_height = (max_x - min_x) / n_cols, (max_y - min_y) / n_rows
+    
+    cell_words = defaultdict(str)
+    for item in data:
+        # Calculate the average x and y coordinates for the item
+        avg_x, avg_y = calculate_centroids([item])[0]
+        # Determine the grid position for the item
+        row, col = get_grid_position(avg_x, avg_y, min_x, min_y, cell_width, cell_height)
+        # Append the item's value to the cell
+        cell_words[(row, col)] = cell_words[(row, col)] + " " + item['value'] if cell_words[(row, col)] else item['value']
+    
+    # Initialize the table with empty values
+    concatenated_table = [['' for _ in range(n_cols)] for _ in range(n_rows)]
+    # Fill in the table with concatenated words
+    for (row, col), value in cell_words.items():
+        concatenated_table[row][col] = value.strip()
+    
+    # Convert the table to a DataFrame for better visualization and return
+    return pd.DataFrame(concatenated_table)
+
+
     
 def load_predictor(
     det_arch: str,
@@ -296,6 +432,9 @@ def upload_page():
                 # Display JSON
                 st.markdown("\nHere are your analysis results in JSON format:")
                 st.json(page_export)
+
+                output_df = create_table(page_export, 0.02, 0.02)
+                st.dataframe(output_df)
 
 
 # Create tab names and corresponding functions
