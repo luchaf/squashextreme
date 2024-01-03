@@ -19,6 +19,8 @@ from doctr.models import ocr_predictor
 from doctr.models.predictor import OCRPredictor
 import io
 import torch
+from doctr.models import ocr_predictor, db_resnet50, crnn_vgg16_bn, parseq
+                
     
 def load_predictor(
     det_arch: str,
@@ -261,8 +263,6 @@ def upload_page():
 
         else:
             with st.spinner("Loading model..."):
-                import torch
-                from doctr.models import ocr_predictor, db_resnet50, crnn_vgg16_bn, parseq
                 reco_model = parseq(pretrained=False, pretrained_backbone=False)
                 reco_params = torch.load('parseq_20240102-232334.pt', map_location="cpu")
                 reco_model.load_state_dict(reco_params)
