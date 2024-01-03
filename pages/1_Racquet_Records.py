@@ -264,7 +264,7 @@ def upload_page():
         else:
             with st.spinner("Loading model..."):
                 reco_model = parseq(pretrained=False, pretrained_backbone=False)
-                reco_params = torch.load('parseq_20240102-232334.pt', map_location="cpu")
+                reco_params = torch.load('pages/parseq_20240102-232334.pt', map_location="cpu")
                 reco_model.load_state_dict(reco_params)
                 predictor = load_predictor(
                     det_arch, reco_model, assume_straight_pages, straighten_pages, bin_thresh, forward_device
