@@ -208,20 +208,8 @@ def online_form():
 def upload_page():
     DET_ARCHS = [
         "db_resnet50",
-        "db_resnet34",
-        "db_mobilenet_v3_large",
-        "linknet_resnet18",
-        "linknet_resnet34",
-        "linknet_resnet50",
     ]
     RECO_ARCHS = [
-        "crnn_vgg16_bn",
-        "crnn_mobilenet_v3_small",
-        "crnn_mobilenet_v3_large",
-        "master",
-        "sar_resnet31",
-        "vitstr_small",
-        "vitstr_base",
         "parseq",
     ]
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -277,8 +265,13 @@ def upload_page():
 
         else:
             with st.spinner("Loading model..."):
+                import torch
+                from doctr.models import ocr_predictor, db_resnet50, crnn_vgg16_bn, parseq
+                reco_model = parseq(pretrained=False, pretrained_backbone=False)
+                reco_params = torch.load('parseq_20240102-232334.pt', map_location="cpu")
+                reco_model.load_state_dict(reco_params)
                 predictor = load_predictor(
-                    det_arch, reco_arch, assume_straight_pages, straighten_pages, bin_thresh, forward_device
+                    det_arch, reco_model, assume_straight_pages, straighten_pages, bin_thresh, forward_device
                 )
 
             with st.spinner("Analyzing..."):
