@@ -206,12 +206,8 @@ def online_form():
     display_enter_match_results()
 
 def upload_page():
-    DET_ARCHS = [
-        "db_resnet50",
-    ]
-    RECO_ARCHS = [
-        "parseq",
-    ]
+    DET_ARCHS = ["db_resnet50"]
+    RECO_ARCHS = ["parseq"]
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # For newline
     st.write("\n")
