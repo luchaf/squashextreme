@@ -365,11 +365,18 @@ def upload_page():
     #st.set_option("deprecation.showfileUploaderEncoding", False)
     # Choose your own image
     uploaded_file = st.sidebar.file_uploader("Upload files", type=["pdf", "png", "jpeg", "jpg"])
+
     if uploaded_file is not None:
+        # Create a temporary file to save the uploaded file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
+            # Write the contents of the uploaded file to the temporary file
+            tmp_file.write(uploaded_file.getvalue())
+            tmp_file_path = tmp_file.name  # Store the temporary file path
+        
         if uploaded_file.name.endswith(".pdf"):
-            doc = DocumentFile.from_pdf(uploaded_file.read())
+            doc = DocumentFile.from_pdf(tmp_file_path)
         else:
-            doc = DocumentFile.from_images(uploaded_file.read())
+            doc = DocumentFile.from_images(tmp_file_path)
         page_idx = st.sidebar.selectbox("Page selection", [idx + 1 for idx in range(len(doc))]) - 1
         page = doc[page_idx]
         cols[0].image(page)
@@ -431,6 +438,7 @@ def upload_page():
 
                 output_df = create_table(page_export, 0.02, 0.02)
                 st.dataframe(output_df)
+                
 
 
 # Create tab names and corresponding functions
@@ -453,3 +461,6 @@ selected_function = tab_functions[tab_index]
 
 # Execute the selected function
 selected_function()
+# After processing the file, you can delete the temporary file
+os.remove(tmp_file_path)
+st.success('File processed and temporary file deleted.')
