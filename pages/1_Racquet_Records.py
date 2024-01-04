@@ -192,7 +192,7 @@ class TableImageProcessor:
             plt.text((x1 + x2) / 2, (y1 + y2) / 2, box_info['value'], color='white', ha='center', va='center')
 
         # Display the plot
-        plt.show()
+        st.pyplot(fig)
 
     def map_values_to_dataframe(self):
         """
