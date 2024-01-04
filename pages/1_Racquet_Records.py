@@ -27,7 +27,7 @@ from collections import defaultdict
 from sklearn.cluster import DBSCAN
 import time
 from transformers import DetrFeatureExtractor, TableTransformerForObjectDetection
-import psutil
+#import psutil
 from sklearn.cluster import DBSCAN
 
 
