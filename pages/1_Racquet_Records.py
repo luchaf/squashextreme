@@ -464,5 +464,5 @@ selected_function = tab_functions[tab_index]
 # Execute the selected function
 selected_function()
 # After processing the file, you can delete the temporary file
-os.remove(tmp_file_path)
-st.success('File processed and temporary file deleted.')
+#os.remove(tmp_file_path)
+#st.success('File processed and temporary file deleted.')
