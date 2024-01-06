@@ -5,7 +5,7 @@
 
 import os
 import tempfile
-import streamlit as st
+
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -31,6 +31,11 @@ from transformers import DetrFeatureExtractor, TableTransformerForObjectDetectio
 from sklearn.cluster import DBSCAN
 
 
+import streamlit as st
+from streamlit_cropper import st_cropper
+
+
+
 class TableImageProcessor:
     """
     A class used to encapsulate all methods related to processing an image of a table and extracting its data.
@@ -46,7 +51,7 @@ class TableImageProcessor:
         value_boxes_absolute (list): List of word bounding boxes and their respective values.
     """
 
-    def __init__(self, image_path, model_path='pages/parseq_20240102-232334.pt'):
+    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/pointless/squashextreme/pages/parseq_20240102-232334.pt'):
         """
         The constructor for TableImageProcessor class.
 
@@ -103,12 +108,12 @@ class TableImageProcessor:
         """
         image = Image.open(image_path).convert("RGB")
 
-        # If the image is in landscape mode (width > height), rotate it
-        if image.width > image.height:
-            image = image.transpose(Image.ROTATE_270)
+        # # If the image is in landscape mode (width > height), rotate it
+        # if image.width > image.height:
+        #     image = image.transpose(Image.ROTATE_270)
 
-        # Save the processed image back to the path
-        image.save(image_path)
+        # # Save the processed image back to the path
+        # image.save(image_path)
 
         return image
 
@@ -281,7 +286,7 @@ class TableImageProcessor:
         Returns:
             tuple: A tuple containing the labels for each point and the centroids of the clusters.
         """
-        dbscan = DBSCAN(eps=eps, min_samples=3)
+        dbscan = DBSCAN(eps=eps, min_samples=4)
         dbscan.fit(centroids[:, axis_index].reshape(-1, 1))
         labels = dbscan.labels_
         unique_labels = np.unique(labels)
@@ -560,56 +565,85 @@ def upload_page():
     DET_ARCHS = ["db_resnet50"]
     RECO_ARCHS = ["parseq"]
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    # For newline
-    st.write("\n")
-    # Instructions
-    st.markdown("*Hint: click on the top-right corner of an image to enlarge it!*")
-    # Set the columns
-    cols = st.columns((1, 1, 1, 1))
-    cols[0].subheader("Input page")
-    cols[1].subheader("Segmentation heatmap")
-    cols[2].subheader("OCR output")
-    cols[3].subheader("Page reconstitution")
+    uploaded_file = st.file_uploader("Upload files", type=["pdf", "png", "jpeg", "jpg"])
 
-    # Sidebar
-    # File selection
-    st.sidebar.title("Document selection")
-    # Disabling warning
-    #st.set_option("deprecation.showfileUploaderEncoding", False)
-    # Choose your own image
-    uploaded_file = st.sidebar.file_uploader("Upload files", type=["pdf", "png", "jpeg", "jpg"])
+    # Map file extensions to PIL format strings
+    EXTENSION_TO_FORMAT = {
+        'jpg': 'JPEG',
+        'jpeg': 'JPEG',
+        'png': 'PNG',
+        'pdf': 'PDF'  # assuming you have some handling for pdfs
+    }
 
-    if uploaded_file is not None:
-        # Create a temporary file to save the uploaded file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-            # Write the contents of the uploaded file to the temporary file
-            tmp_file.write(uploaded_file.getvalue())
-            tmp_file_path = tmp_file.name  # Store the temporary file path
+    if uploaded_file:
+
+        # Determine the image format from the uploaded file name
+        file_extension = os.path.splitext(uploaded_file.name)[1].lstrip('.').lower()
+        image_format = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())  # default to upper case of extension if not found
         
-        if uploaded_file.name.endswith(".pdf"):
-            doc = DocumentFile.from_pdf(tmp_file_path)
-        else:
-            doc = DocumentFile.from_images(tmp_file_path)
-        page_idx = st.sidebar.selectbox("Page selection", [idx + 1 for idx in range(len(doc))]) - 1
-        page = doc[page_idx]
-        cols[0].image(page)
+        orig_img = Image.open(uploaded_file)
+        # Check and correct the orientation if needed
+        if hasattr(orig_img, "_getexif"):
+            exif = orig_img._getexif()
+            if exif:
+                orientation = exif.get(0x0112)
+                if orientation is not None:
+                    if orientation == 3:
+                        orig_img = orig_img.rotate(180, expand=True)
+                    elif orientation == 6:
+                        orig_img = orig_img.rotate(270, expand=True)
+                    elif orientation == 8:
+                        orig_img = orig_img.rotate(90, expand=True)
 
-        # Create an instance of TableImageProcessor and process the table image.
-        # Initialize the processor with the image path
-        processor = TableImageProcessor(tmp_file_path)
-        # Compute bounding boxes using the table transformer model
-        processor.compute_boxes()
-        # Extract words and their bounding boxes using the OCR model
-        processor.extract_and_map_words()
-        # Create bounding boxes plot (table transformer + text recognition model)
-        processor.plot_boxes()
-        # Create dataframe combining table transformer + text recognition model outputs
-        df = processor.map_values_to_dataframe()
-        # Create dataframe solely with the text recognition model outputs
-        table_df = processor.create_table(processor.value_boxes_relative, eps_x=0.02, eps_y=0.02)
+        #img = orig_img
 
-        st.dataframe(table_df)
-        st.dataframe(df)
+        # Get a cropped image from the frontend
+        width, height = orig_img.size
+        border_pixels = 25
+        cropped_img_dims = st_cropper(orig_img, realtime_update=True, box_color='#0000FF',return_type="box",aspect_ratio=None, default_coords=(border_pixels, width-border_pixels, border_pixels, height-border_pixels))
+        
+        # Button to crop the image
+        if st.button('Crop Image'):
+            # Define the crop area
+            crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] +  cropped_img_dims["height"])
+
+            # Crop and display the image
+            cropped_img = orig_img.crop(crop_area)
+            st.image(cropped_img, caption='Cropped Image', use_column_width=True)
+
+            # Create a temporary file to save the uploaded file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
+                # Write the contents of the uploaded file to the temporary file
+                cropped_img.save(tmp_file, format=image_format)
+                #tmp_file.write(uploaded_file.getvalue())
+                tmp_file_path = tmp_file.name  # Store the temporary file path
+            
+            if uploaded_file.name.endswith(".pdf"):
+                doc = DocumentFile.from_pdf(tmp_file_path)
+            else:
+                doc = DocumentFile.from_images(tmp_file_path)
+
+            page = doc[0]
+
+
+            # Create an instance of TableImageProcessor and process the table image.
+            # Initialize the processor with the image path
+            processor = TableImageProcessor(tmp_file_path)
+            # Compute bounding boxes using the table transformer model
+            processor.compute_boxes()
+            # Extract words and their bounding boxes using the OCR model
+            processor.extract_and_map_words()
+            # Create bounding boxes plot (table transformer + text recognition model)
+            processor.plot_boxes()
+            # Create dataframe combining table transformer + text recognition model outputs
+            df = processor.map_values_to_dataframe()
+            # Create dataframe solely with the text recognition model outputs
+            table_df = processor.create_table(processor.value_boxes_relative, eps_x=0.02, eps_y=0.02)
+
+            st.write("Table transformer + Text recognition:")
+            st.dataframe(df)
+            st.write("Text recognition + Logic:")
+            st.dataframe(table_df)
                 
 
 # Create tab names and corresponding functions
