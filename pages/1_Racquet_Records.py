@@ -10,7 +10,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
 from utils import extract_data_from_games
-from PIL import Image
+from PIL import Image, ExifTags
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -33,7 +33,25 @@ from sklearn.cluster import DBSCAN
 
 import streamlit as st
 from streamlit_cropper import st_cropper
+from streamlit_drawable_canvas import st_canvas
+from streamlit_dimensions import st_dimensions
 
+
+# Set the page to wide mode
+st.set_page_config(layout="wide")
+
+
+# def editable_table(df):
+#     # Create a copy of the DataFrame to store updates
+#     new_df = df.copy()
+    
+#     # Iterate over each cell and create an input field for user interaction
+#     for i, row in df.iterrows():
+#         for col, value in row.items():
+#             new_value = st.text_input(f"{col}_{i}", value)  # Create an input field for each cell
+#             new_df.at[i, col] = new_value  # Update the new DataFrame with the input data
+    
+#     return new_df
 
 
 class TableImageProcessor:
@@ -179,25 +197,47 @@ class TableImageProcessor:
         """
         Plots the bounding boxes for table cells and words on the image.
         """
+
+        # Assuming self.image is a PIL Image, get its dimensions for aspect ratio
+        image_width, image_height = self.image.size
+
+        # Set the figure size based on the aspect ratio of the image
+        fig_width = 12  # You can adjust this as necessary
+        fig_height = fig_width * (image_height / image_width)
+
         # Create a figure and axis for the plot
-        fig, ax = plt.subplots(1, figsize=(12, 12))
+        fig, ax = plt.subplots(1, figsize=(fig_width, fig_height))
         ax.imshow(self.image)
+
+        # Turn off the axis
+        ax.axis('off')
+
+        # # Create a figure and axis for the plot
+        # fig, ax = plt.subplots(1, figsize=(12, 12))
+        # ax.imshow(self.image)
 
         # Plot the bounding boxes for the table cells
         for (x1, y1, x2, y2) in self.cell_locations:
-            rect = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=1, edgecolor='r', facecolor='none')
+            rect = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=4, edgecolor='r', facecolor='none')
             ax.add_patch(rect)
 
         # Plot the bounding boxes for the words
         for box_info in self.value_boxes_absolute:
             x1, y1 = box_info['geometry'][0]
             x2, y2 = box_info['geometry'][1]
-            rect = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=1, edgecolor='b', facecolor='none')
+            rect = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=4, edgecolor='white', facecolor='none')
             ax.add_patch(rect)
-            plt.text((x1 + x2) / 2, (y1 + y2) / 2, box_info['value'], color='white', ha='center', va='center')
+            plt.text((x1 + x2) / 2, (y1 + y2) / 2, box_info['value'], color='white', ha='center', va='center', fontsize=22)
 
+        # Remove padding and margins from the figure
+        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        ax.xaxis.set_major_locator(plt.NullLocator())
+        ax.yaxis.set_major_locator(plt.NullLocator())
+
+        return fig
         # Display the plot
-        st.pyplot(fig)
+        #st.pyplot(fig)
 
     def map_values_to_dataframe(self):
         """
@@ -561,90 +601,152 @@ def online_form():
 
     display_enter_match_results()
 
-def upload_page():
+
+def upload_page_fixed():
+
+    # Initialize session state for tracking progress
+    if 'step' not in st.session_state:
+        st.session_state['step'] = 'upload'
+    if 'editable_df' not in st.session_state:
+        st.session_state['editable_df'] = pd.DataFrame()
+
     DET_ARCHS = ["db_resnet50"]
     RECO_ARCHS = ["parseq"]
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    uploaded_file = st.file_uploader("Upload files", type=["pdf", "png", "jpeg", "jpg"])
 
-    # Map file extensions to PIL format strings
-    EXTENSION_TO_FORMAT = {
-        'jpg': 'JPEG',
-        'jpeg': 'JPEG',
-        'png': 'PNG',
-        'pdf': 'PDF'  # assuming you have some handling for pdfs
-    }
+    # First step: Uploading the image
+    if st.session_state['step'] == 'upload':
+        with st.form("upload_form"):
+            uploaded_file = st.file_uploader("Upload files", type=["pdf", "png", "jpeg", "jpg"])
+            upload_button = st.form_submit_button('Upload Image')
 
-    if uploaded_file:
+        if upload_button and uploaded_file:
+            st.session_state['uploaded_file'] = uploaded_file
+            st.session_state['step'] = 'crop'
+            st.experimental_rerun()  # Force a rerun to update the page immediately
 
-        # Determine the image format from the uploaded file name
+    # Second step: Cropping the image
+    elif st.session_state['step'] == 'crop' and 'uploaded_file' in st.session_state:
+        uploaded_file = st.session_state['uploaded_file']
+
+        # Map file extensions to PIL format strings
+        EXTENSION_TO_FORMAT = {
+            'jpg': 'JPEG',
+            'jpeg': 'JPEG',
+            'png': 'PNG',
+            'pdf': 'PDF'
+        }
+
         file_extension = os.path.splitext(uploaded_file.name)[1].lstrip('.').lower()
-        image_format = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())  # default to upper case of extension if not found
-        
+        st.session_state['image_format'] = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())
+
         orig_img = Image.open(uploaded_file)
+
         # Check and correct the orientation if needed
-        if hasattr(orig_img, "_getexif"):
-            exif = orig_img._getexif()
-            if exif:
-                orientation = exif.get(0x0112)
-                if orientation is not None:
-                    if orientation == 3:
-                        orig_img = orig_img.rotate(180, expand=True)
-                    elif orientation == 6:
-                        orig_img = orig_img.rotate(270, expand=True)
-                    elif orientation == 8:
-                        orig_img = orig_img.rotate(90, expand=True)
+        for orientation in ExifTags.TAGS.keys():
+            if ExifTags.TAGS[orientation] == 'Orientation':
+                break
+        exif = orig_img._getexif()
+        if exif:
+            exif = dict(exif.items())
+            orientation = exif.get(orientation)
+            if orientation == 3:
+                orig_img = orig_img.rotate(180, expand=True)
+            elif orientation == 6:
+                orig_img = orig_img.rotate(270, expand=True)
+            elif orientation == 8:
+                orig_img = orig_img.rotate(90, expand=True)
 
-        #img = orig_img
-
-        # Get a cropped image from the frontend
         width, height = orig_img.size
         border_pixels = 25
-        cropped_img_dims = st_cropper(orig_img, realtime_update=True, box_color='#0000FF',return_type="box",aspect_ratio=None, default_coords=(border_pixels, width-border_pixels, border_pixels, height-border_pixels))
-        
-        # Button to crop the image
-        if st.button('Crop Image'):
-            # Define the crop area
-            crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] +  cropped_img_dims["height"])
+        cropped_img_dims = st_cropper(orig_img, realtime_update=True, box_color='#0000FF', return_type="box", aspect_ratio=None, default_coords=(border_pixels, width - border_pixels, border_pixels, height - border_pixels))
 
-            # Crop and display the image
+        with st.form("crop_form"):
+            crop_button = st.form_submit_button('Crop Image')
+
+        if crop_button:
+            crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
             cropped_img = orig_img.crop(crop_area)
             st.image(cropped_img, caption='Cropped Image', use_column_width=True)
+            st.session_state['cropped_img'] = cropped_img
+            st.session_state['step'] = 'process'
+            st.experimental_rerun()  # Force a rerun to update the page immediately
 
-            # Create a temporary file to save the uploaded file
+    # Third step: Process and display the cropped image and table
+    elif st.session_state['step'] == 'process':
+        if 'uploaded_file' in st.session_state and 'cropped_img' in st.session_state and 'image_format' in st.session_state:
+            uploaded_file = st.session_state['uploaded_file']
+            cropped_img = st.session_state['cropped_img']
+            image_format = st.session_state['image_format']
+
             with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
-                # Write the contents of the uploaded file to the temporary file
                 cropped_img.save(tmp_file, format=image_format)
-                #tmp_file.write(uploaded_file.getvalue())
-                tmp_file_path = tmp_file.name  # Store the temporary file path
-            
+                tmp_file_path = tmp_file.name
+
             if uploaded_file.name.endswith(".pdf"):
                 doc = DocumentFile.from_pdf(tmp_file_path)
             else:
                 doc = DocumentFile.from_images(tmp_file_path)
 
             page = doc[0]
-
-
-            # Create an instance of TableImageProcessor and process the table image.
-            # Initialize the processor with the image path
             processor = TableImageProcessor(tmp_file_path)
-            # Compute bounding boxes using the table transformer model
             processor.compute_boxes()
-            # Extract words and their bounding boxes using the OCR model
             processor.extract_and_map_words()
-            # Create bounding boxes plot (table transformer + text recognition model)
-            processor.plot_boxes()
-            # Create dataframe combining table transformer + text recognition model outputs
+            #processor.plot_boxes()
             df = processor.map_values_to_dataframe()
-            # Create dataframe solely with the text recognition model outputs
-            table_df = processor.create_table(processor.value_boxes_relative, eps_x=0.02, eps_y=0.02)
 
-            st.write("Table transformer + Text recognition:")
-            st.dataframe(df)
-            st.write("Text recognition + Logic:")
-            st.dataframe(table_df)
-                
+            # Wrap table editing and submission button in a form
+            with st.form("edit_table_form"):
+                col1, col2, col3 = st.columns(3)
+
+                if cropped_img:
+                    img_width, img_height = cropped_img.size
+                    aspect_ratio = img_height / img_width
+                    canvas_width = 600
+                    canvas_height = int(canvas_width * aspect_ratio)
+                else:
+                    canvas_width, canvas_height = 600, 600
+
+                with col1:
+                    st.write("Table transformer + Text recognition result:")
+                    edited_df = st.data_editor(
+                        df, 
+                        num_rows="dynamic", 
+                        height=1400, 
+                        use_container_width=True)
+                    # Submission button for the form
+                    submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
+
+                with col2:
+                    st.write("Cropped Image (Draw on me!)")
+                    # #test_width = st_dimensions(key="col2")["width"]
+                    #  #st.write(test_width)
+                    # canvas_result = st_canvas(
+                    #     fill_color="rgba(255, 165, 0, 0.3)",
+                    #     stroke_width=3,
+                    #     stroke_color="#e00",
+                    #     background_image=cropped_img if cropped_img else None,
+                    #     update_streamlit=False,
+                    #     width=test_width,
+                    #     height=test_width,
+                    #     drawing_mode="freedraw",
+                    #     key="canvas",
+                    # )
+                    st.image(cropped_img, use_column_width=True)
+
+
+                with col3:
+                    st.write("Table transformer + Text recognition visualized:")
+                    boxes_fig = processor.plot_boxes()
+                    st.pyplot(boxes_fig, use_container_width=True)
+
+
+
+            if submit_edits_button:
+                st.write("Table Saved Successfully!")
+                st.session_state['step'] = 'upload'
+                st.experimental_rerun()  # Force a rerun to update the page immediately
+
 
 # Create tab names and corresponding functions
 tab_names = [
@@ -656,7 +758,7 @@ tab_names = [
 tab_functions = [
     show_me_the_list,
     online_form,
-    upload_page,
+    upload_page_fixed,
 ]
 
 # Create tabs dynamically
