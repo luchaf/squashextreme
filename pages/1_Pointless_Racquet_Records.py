@@ -36,6 +36,159 @@ from streamlit_cropper import st_cropper
 from streamlit_drawable_canvas import st_canvas
 from streamlit_dimensions import st_dimensions
 
+from streamlit_img_label import st_img_label
+
+
+import streamlit as st
+import os
+from streamlit_img_label import st_img_label
+from streamlit_img_label.manage import ImageManager, ImageDirManager
+
+
+def run_jo(img_dir='/teamspace/studios/this_studio/pointless/squashextreme/data/images', labels=["table row", "table column"]):
+
+    idm = ImageDirManager(img_dir)
+
+    if "files" not in st.session_state:
+        st.session_state["files"] = idm.get_all_files()
+        st.session_state["annotation_files"] = idm.get_exist_annotation_files()
+        st.session_state["image_index"] = 0
+    else:
+        idm.set_all_files(st.session_state["files"])
+        idm.set_annotation_files(st.session_state["annotation_files"])
+    
+    def refresh():
+        st.session_state["files"] = idm.get_all_files()
+        st.session_state["annotation_files"] = idm.get_exist_annotation_files()
+        st.session_state["image_index"] = 0
+
+    def next_image():
+        image_index = st.session_state["image_index"]
+        if image_index < len(st.session_state["files"]) - 1:
+            st.session_state["image_index"] += 1
+        else:
+            st.warning('This is the last image.')
+
+    def previous_image():
+        image_index = st.session_state["image_index"]
+        if image_index > 0:
+            st.session_state["image_index"] -= 1
+        else:
+            st.warning('This is the first image.')
+
+    def next_annotate_file():
+        image_index = st.session_state["image_index"]
+        next_image_index = idm.get_next_annotation_image(image_index)
+        if next_image_index:
+            st.session_state["image_index"] = idm.get_next_annotation_image(image_index)
+        else:
+            st.warning("All images are annotated.")
+            next_image()
+
+    def go_to_image():
+        file_index = st.session_state["files"].index(st.session_state["file"])
+        st.session_state["image_index"] = file_index
+
+    # Sidebar: show status
+    n_files = len(st.session_state["files"])
+    n_annotate_files = len(st.session_state["annotation_files"])
+    st.sidebar.write("Total files:", n_files)
+    st.sidebar.write("Total annotate files:", n_annotate_files)
+    st.sidebar.write("Remaining files:", n_files - n_annotate_files)
+
+    st.sidebar.selectbox(
+        "Files",
+        st.session_state["files"],
+        index=st.session_state["image_index"],
+        on_change=go_to_image,
+        key="file",
+    )
+    col1, col2 = st.sidebar.columns(2)
+    with col1:
+        st.button(label="Previous image", on_click=previous_image)
+    with col2:
+        st.button(label="Next image", on_click=next_image)
+    st.sidebar.button(label="Next need annotate", on_click=next_annotate_file)
+    st.sidebar.button(label="Refresh", on_click=refresh)
+
+    # Main content: annotate images
+    img_file_name = idm.get_image(st.session_state["image_index"])
+    img_path = os.path.join(img_dir, img_file_name)
+    im = ImageManager(img_path)
+    img = im.get_img()
+    resized_img = im.resizing_img()
+    resized_rects = im.get_resized_rects()
+    rects = st_img_label(resized_img, box_color="red", rects=resized_rects)
+
+    def annotate():
+        im.save_annotation()
+        image_annotate_file_name = img_file_name.split(".")[0] + ".xml"
+        if image_annotate_file_name not in st.session_state["annotation_files"]:
+            st.session_state["annotation_files"].append(image_annotate_file_name)
+        next_annotate_file()
+
+    if rects:
+        st.button(label="Save", on_click=annotate)
+        preview_imgs = im.init_annotation(rects)
+
+        for i, prev_img in enumerate(preview_imgs):
+            prev_img[0].thumbnail((200, 200))
+            col1, col2 = st.columns(2)
+            with col1:
+                col1.image(prev_img[0])
+            with col2:
+                default_index = 0
+                if prev_img[1]:
+                    default_index = labels.index(prev_img[1])
+
+                select_label = col2.selectbox(
+                    "Label", labels, key=f"label_{i}", index=default_index
+                )
+                im.set_annotation(i, select_label)
+
+
+
+def run_func(labels):
+
+    # Upload file
+    uploaded_file = st.file_uploader("Choose an image...", type=['png', 'jpg', 'jpeg'])
+
+    if uploaded_file is not None:
+        # Read the file and set it in the session state
+        bytes_data = uploaded_file.read()
+        st.session_state["image"] = bytes_data
+        image = Image.open(io.BytesIO(bytes_data))
+
+        # Main content: annotate images
+        resized_img = image.resize((600, 400))  # Resize for easier handling
+        rects = st_img_label(resized_img, box_color="red")
+
+        def annotate():
+            if 'image' in st.session_state and rects:
+                # Construct a simple string to represent the annotations
+                annotation_data = f"Image: {uploaded_file.name}\n"
+                for i, rect in enumerate(rects):
+                    label = st.session_state.get(f"label_{i}", "No Label")
+                    annotation_data += f"Box {i+1}: {rect}, Label: {label}\n"
+
+                # Save to a file
+                with open("annotations.txt", "a") as file:
+                    file.write(annotation_data)
+
+                st.success("Annotation saved!")
+
+
+        if rects:
+            st.button(label="Save", on_click=annotate)
+
+            for i, rect in enumerate(rects):
+                # Display the bounding box coordinates (or add any other logic you need)
+                st.write(f"Bounding Box {i+1}: {rect}")
+
+                # If you want to label the bounding boxes, you can add a select box like this
+                label = st.selectbox("Label", labels, key=f"label_{i}")
+                # Add logic to handle the selected label
+
 
 # Set the page to wide mode
 st.set_page_config(layout="wide")
@@ -69,7 +222,7 @@ class TableImageProcessor:
         value_boxes_absolute (list): List of word bounding boxes and their respective values.
     """
 
-    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/pointless/squashextreme/pages/parseq_20240102-232334.pt'):
+    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/pointless/squashextreme/models/parseq_20240102-232334.pt'):
         """
         The constructor for TableImageProcessor class.
 
@@ -227,7 +380,7 @@ class TableImageProcessor:
             x2, y2 = box_info['geometry'][1]
             rect = patches.Rectangle((x1, y1), x2 - x1, y2 - y1, linewidth=4, edgecolor='white', facecolor='none')
             ax.add_patch(rect)
-            plt.text((x1 + x2) / 2, (y1 + y2) / 2, box_info['value'], color='white', ha='center', va='center', fontsize=22)
+            plt.text((x1 + x2) / 2, (y1 + y2) / 2, box_info['value'], color='white', ha='center', va='center', fontsize=32)
 
         # Remove padding and margins from the figure
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -411,10 +564,6 @@ class TableImageProcessor:
 
         # Convert the table to a DataFrame for better visualization and return
         return pd.DataFrame(concatenated_table)
-    
-
-
-
     
 def load_predictor(
     det_arch: str,
@@ -628,6 +777,7 @@ def upload_page_fixed():
     # Second step: Cropping the image
     elif st.session_state['step'] == 'crop' and 'uploaded_file' in st.session_state:
         uploaded_file = st.session_state['uploaded_file']
+        file_name = uploaded_file.name
 
         # Map file extensions to PIL format strings
         EXTENSION_TO_FORMAT = {
@@ -641,7 +791,6 @@ def upload_page_fixed():
         st.session_state['image_format'] = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())
 
         orig_img = Image.open(uploaded_file)
-
         # Check and correct the orientation if needed
         for orientation in ExifTags.TAGS.keys():
             if ExifTags.TAGS[orientation] == 'Orientation':
@@ -657,6 +806,17 @@ def upload_page_fixed():
             elif orientation == 8:
                 orig_img = orig_img.rotate(90, expand=True)
 
+        # Define the path for the folder one level above the current script
+        current_script_path = os.path.dirname(__file__)
+        parent_directory = os.path.join(current_script_path, os.pardir)
+        target_folder = os.path.normpath(os.path.join(parent_directory, 'data/images'))
+        # Make sure the target directory exists, if not, create it
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
+        # Define the full path for the new file
+        save_path = os.path.join(target_folder, uploaded_file.name)
+        orig_img.save(save_path)
+
         width, height = orig_img.size
         border_pixels = 25
         cropped_img_dims = st_cropper(orig_img, realtime_update=True, box_color='#0000FF', return_type="box", aspect_ratio=None, default_coords=(border_pixels, width - border_pixels, border_pixels, height - border_pixels))
@@ -667,6 +827,7 @@ def upload_page_fixed():
         if crop_button:
             crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
             cropped_img = orig_img.crop(crop_area)
+
             st.image(cropped_img, caption='Cropped Image', use_column_width=True)
             st.session_state['cropped_img'] = cropped_img
             st.session_state['step'] = 'process'
@@ -692,7 +853,6 @@ def upload_page_fixed():
             processor = TableImageProcessor(tmp_file_path)
             processor.compute_boxes()
             processor.extract_and_map_words()
-            #processor.plot_boxes()
             df = processor.map_values_to_dataframe()
 
             # Wrap table editing and submission button in a form
@@ -718,47 +878,32 @@ def upload_page_fixed():
                     submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
 
                 with col2:
-                    st.write("Cropped Image (Draw on me!)")
-                    # #test_width = st_dimensions(key="col2")["width"]
-                    #  #st.write(test_width)
-                    # canvas_result = st_canvas(
-                    #     fill_color="rgba(255, 165, 0, 0.3)",
-                    #     stroke_width=3,
-                    #     stroke_color="#e00",
-                    #     background_image=cropped_img if cropped_img else None,
-                    #     update_streamlit=False,
-                    #     width=test_width,
-                    #     height=test_width,
-                    #     drawing_mode="freedraw",
-                    #     key="canvas",
-                    # )
+                    st.write("Cropped Image")
                     st.image(cropped_img, use_column_width=True)
-
 
                 with col3:
                     st.write("Table transformer + Text recognition visualized:")
                     boxes_fig = processor.plot_boxes()
                     st.pyplot(boxes_fig, use_container_width=True)
 
-
-
             if submit_edits_button:
                 st.write("Table Saved Successfully!")
-                st.session_state['step'] = 'upload'
+                #st.session_state['step'] = 'upload'
                 st.experimental_rerun()  # Force a rerun to update the page immediately
-
 
 # Create tab names and corresponding functions
 tab_names = [
-    "List of recorded matches",
-    "Online form",
-    "Upload page",
+    "Pointless list of recorded matches",
+    "Pointless online form",
+    "Pointless upload page",
+    "Pointless tabel labeling",
 ]
 
 tab_functions = [
     show_me_the_list,
     online_form,
     upload_page_fixed,
+    run_jo
 ]
 
 # Create tabs dynamically
@@ -768,6 +913,11 @@ selected_function = tab_functions[tab_index]
 
 # Execute the selected function
 selected_function()
-# After processing the file, you can delete the temporary file
-#os.remove(tmp_file_path)
-#st.success('File processed and temporary file deleted.')
+
+
+
+# # pip install pascal_voc_writer
+
+
+
+
