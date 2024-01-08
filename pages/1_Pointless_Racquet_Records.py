@@ -3,9 +3,10 @@
 # This program is licensed under the Apache License version 2.
 # See LICENSE or go to <https://www.apache.org/licenses/LICENSE-2.0.txt> for full license details.
 
+import io
 import os
 import tempfile
-
+from collections import defaultdict
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
@@ -20,191 +21,19 @@ from doctr.io import DocumentFile
 from doctr.utils.visualization import visualize_page
 from doctr.models import ocr_predictor
 from doctr.models.predictor import OCRPredictor
-import io
-import torch
 from doctr.models import ocr_predictor, db_resnet50, crnn_vgg16_bn, parseq
-from collections import defaultdict
+import torch
 from sklearn.cluster import DBSCAN
 import time
 from transformers import DetrFeatureExtractor, TableTransformerForObjectDetection
-#import psutil
-from sklearn.cluster import DBSCAN
-
-
 import streamlit as st
 from streamlit_cropper import st_cropper
-from streamlit_drawable_canvas import st_canvas
-from streamlit_dimensions import st_dimensions
-
-from streamlit_img_label import st_img_label
-
-
-import streamlit as st
-import os
 from streamlit_img_label import st_img_label
 from streamlit_img_label.manage import ImageManager, ImageDirManager
 
 
-def run_jo(img_dir='/teamspace/studios/this_studio/pointless/squashextreme/data/images', labels=["table row", "table column"]):
-
-    idm = ImageDirManager(img_dir)
-
-    if "files" not in st.session_state:
-        st.session_state["files"] = idm.get_all_files()
-        st.session_state["annotation_files"] = idm.get_exist_annotation_files()
-        st.session_state["image_index"] = 0
-    else:
-        idm.set_all_files(st.session_state["files"])
-        idm.set_annotation_files(st.session_state["annotation_files"])
-    
-    def refresh():
-        st.session_state["files"] = idm.get_all_files()
-        st.session_state["annotation_files"] = idm.get_exist_annotation_files()
-        st.session_state["image_index"] = 0
-
-    def next_image():
-        image_index = st.session_state["image_index"]
-        if image_index < len(st.session_state["files"]) - 1:
-            st.session_state["image_index"] += 1
-        else:
-            st.warning('This is the last image.')
-
-    def previous_image():
-        image_index = st.session_state["image_index"]
-        if image_index > 0:
-            st.session_state["image_index"] -= 1
-        else:
-            st.warning('This is the first image.')
-
-    def next_annotate_file():
-        image_index = st.session_state["image_index"]
-        next_image_index = idm.get_next_annotation_image(image_index)
-        if next_image_index:
-            st.session_state["image_index"] = idm.get_next_annotation_image(image_index)
-        else:
-            st.warning("All images are annotated.")
-            next_image()
-
-    def go_to_image():
-        file_index = st.session_state["files"].index(st.session_state["file"])
-        st.session_state["image_index"] = file_index
-
-    # Sidebar: show status
-    n_files = len(st.session_state["files"])
-    n_annotate_files = len(st.session_state["annotation_files"])
-    st.sidebar.write("Total files:", n_files)
-    st.sidebar.write("Total annotate files:", n_annotate_files)
-    st.sidebar.write("Remaining files:", n_files - n_annotate_files)
-
-    st.sidebar.selectbox(
-        "Files",
-        st.session_state["files"],
-        index=st.session_state["image_index"],
-        on_change=go_to_image,
-        key="file",
-    )
-    col1, col2 = st.sidebar.columns(2)
-    with col1:
-        st.button(label="Previous image", on_click=previous_image)
-    with col2:
-        st.button(label="Next image", on_click=next_image)
-    st.sidebar.button(label="Next need annotate", on_click=next_annotate_file)
-    st.sidebar.button(label="Refresh", on_click=refresh)
-
-    # Main content: annotate images
-    img_file_name = idm.get_image(st.session_state["image_index"])
-    img_path = os.path.join(img_dir, img_file_name)
-    im = ImageManager(img_path)
-    img = im.get_img()
-    resized_img = im.resizing_img()
-    resized_rects = im.get_resized_rects()
-    rects = st_img_label(resized_img, box_color="red", rects=resized_rects)
-
-    def annotate():
-        im.save_annotation()
-        image_annotate_file_name = img_file_name.split(".")[0] + ".xml"
-        if image_annotate_file_name not in st.session_state["annotation_files"]:
-            st.session_state["annotation_files"].append(image_annotate_file_name)
-        next_annotate_file()
-
-    if rects:
-        st.button(label="Save", on_click=annotate)
-        preview_imgs = im.init_annotation(rects)
-
-        for i, prev_img in enumerate(preview_imgs):
-            prev_img[0].thumbnail((200, 200))
-            col1, col2 = st.columns(2)
-            with col1:
-                col1.image(prev_img[0])
-            with col2:
-                default_index = 0
-                if prev_img[1]:
-                    default_index = labels.index(prev_img[1])
-
-                select_label = col2.selectbox(
-                    "Label", labels, key=f"label_{i}", index=default_index
-                )
-                im.set_annotation(i, select_label)
-
-
-
-def run_func(labels):
-
-    # Upload file
-    uploaded_file = st.file_uploader("Choose an image...", type=['png', 'jpg', 'jpeg'])
-
-    if uploaded_file is not None:
-        # Read the file and set it in the session state
-        bytes_data = uploaded_file.read()
-        st.session_state["image"] = bytes_data
-        image = Image.open(io.BytesIO(bytes_data))
-
-        # Main content: annotate images
-        resized_img = image.resize((600, 400))  # Resize for easier handling
-        rects = st_img_label(resized_img, box_color="red")
-
-        def annotate():
-            if 'image' in st.session_state and rects:
-                # Construct a simple string to represent the annotations
-                annotation_data = f"Image: {uploaded_file.name}\n"
-                for i, rect in enumerate(rects):
-                    label = st.session_state.get(f"label_{i}", "No Label")
-                    annotation_data += f"Box {i+1}: {rect}, Label: {label}\n"
-
-                # Save to a file
-                with open("annotations.txt", "a") as file:
-                    file.write(annotation_data)
-
-                st.success("Annotation saved!")
-
-
-        if rects:
-            st.button(label="Save", on_click=annotate)
-
-            for i, rect in enumerate(rects):
-                # Display the bounding box coordinates (or add any other logic you need)
-                st.write(f"Bounding Box {i+1}: {rect}")
-
-                # If you want to label the bounding boxes, you can add a select box like this
-                label = st.selectbox("Label", labels, key=f"label_{i}")
-                # Add logic to handle the selected label
-
-
 # Set the page to wide mode
 st.set_page_config(layout="wide")
-
-
-# def editable_table(df):
-#     # Create a copy of the DataFrame to store updates
-#     new_df = df.copy()
-    
-#     # Iterate over each cell and create an input field for user interaction
-#     for i, row in df.iterrows():
-#         for col, value in row.items():
-#             new_value = st.text_input(f"{col}_{i}", value)  # Create an input field for each cell
-#             new_df.at[i, col] = new_value  # Update the new DataFrame with the input data
-    
-#     return new_df
 
 
 class TableImageProcessor:
@@ -888,7 +717,7 @@ def upload_page_fixed():
 
             if submit_edits_button:
                 st.write("Table Saved Successfully!")
-                #st.session_state['step'] = 'upload'
+                st.session_state['step'] = 'upload'
                 st.experimental_rerun()  # Force a rerun to update the page immediately
 
 # Create tab names and corresponding functions
@@ -896,14 +725,12 @@ tab_names = [
     "Pointless list of recorded matches",
     "Pointless online form",
     "Pointless upload page",
-    "Pointless tabel labeling",
 ]
 
 tab_functions = [
     show_me_the_list,
     online_form,
     upload_page_fixed,
-    run_jo
 ]
 
 # Create tabs dynamically

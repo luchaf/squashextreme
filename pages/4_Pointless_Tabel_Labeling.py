@@ -120,6 +120,7 @@ def get_unique_filenames(source_dir, target_file):
     unique_filenames = set()
     for file in files:
         name, ext = os.path.splitext(file)
+        st.write(name)
         unique_filenames.add(name)
 
     # Ensure the target directory exists
