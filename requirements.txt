@@ -6,14 +6,11 @@ gspread
 google-auth 
 google-auth-oauthlib 
 google-auth-httplib2
-openai
 plotly
 tiktoken 
-wikipedia
 numexpr
 Pillow
-pytesseract
--e git+https://github.com/mindee/doctr.git#egg=python-doctr[torch]
+python-doctr
 transformers
 timm
 importlib_metadata
