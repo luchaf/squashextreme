@@ -35,6 +35,7 @@ torch>=1.12.0,<3.0.0
 torchvision>=0.13.0
 onnx>=1.12.0,<3.0.0
 scikit-learn
+wandb
 streamlit-cropper
 streamlit-img-label
 pascal_voc_writer
