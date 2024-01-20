@@ -23,16 +23,12 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
-from doctr.file_utils import is_tf_available
 from doctr.io import DocumentFile
-from doctr.utils.visualization import visualize_page
-from doctr.models import ocr_predictor
 from doctr.models.predictor import OCRPredictor
-from doctr.models import ocr_predictor, db_resnet50, crnn_vgg16_bn, parseq
+from doctr.models import ocr_predictor, db_resnet50, parseq
 import torch
 from sklearn.cluster import DBSCAN
 import time
-from transformers import DetrFeatureExtractor, TableTransformerForObjectDetection
 import streamlit as st
 from streamlit_cropper import st_cropper
 from streamlit_img_label import st_img_label

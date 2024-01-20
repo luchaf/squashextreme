@@ -3,6 +3,25 @@ import pandas as pd
 import csv
 import os
 
+from doctr.file_utils import is_tf_available
+from doctr.io import DocumentFile
+from doctr.utils.visualization import visualize_page
+from doctr.models import ocr_predictor
+from doctr.models.predictor import OCRPredictor
+from doctr.models import ocr_predictor, db_resnet50, parseq
+from transformers import DetrFeatureExtractor, TableTransformerForObjectDetection
+
+import io
+import numpy as np
+import torch
+from sklearn.cluster import DBSCAN
+from collections import defaultdict
+from PIL import Image, ExifTags
+import cv2
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
+
 class SquashMatchDatabase:
     """
     A class to handle database operations for storing and retrieving squash match results.
@@ -117,7 +136,7 @@ class TableImageProcessor:
         value_boxes_absolute (list): List of word bounding boxes and their respective values.
     """
 
-    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/pointless/squashextreme/models/parseq_20240102-232334.pt'):
+    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/squashextreme/text_recognition/models/parseq_20240117-214006.pt'):
         """
         The constructor for TableImageProcessor class.
 
