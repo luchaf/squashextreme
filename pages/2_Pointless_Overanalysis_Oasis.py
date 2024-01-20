@@ -18,7 +18,7 @@ from pointless_utils import (
 import streamlit as st
 import pandas as pd
 from datetime import date
-
+from match_results.match_results_utils import SquashMatchDatabase
 import matplotlib.pyplot as plt
 
 # Streamlit app
@@ -27,14 +27,13 @@ st.title('Overanalysis Oasis')
 title_color = "#FFFFFF"
 
 # Load data from database
-df = pd.DataFrame()
-df_sheet = pd.read_csv(st.secrets["public_gsheets_url"])
-df_sheet["date"] = df_sheet["date"].astype(str)
-list_of_available_dates = list(set(df_sheet["date"].tolist()))
-df_sheet['parsed_sheet_df'] = df_sheet.apply(lambda x: extract_data_from_games(x["games"], x["date"]), axis=1)
-df_tmp = pd.DataFrame()
-for _, row in df_sheet.iterrows():
-    df_tmp = pd.concat([df_tmp, row["parsed_sheet_df"]])
+db = SquashMatchDatabase()
+df_tmp = db.get_match_results_from_db() # Get match results as a DataFrame
+# tmp hack
+df_tmp['First Name'] = df_tmp["Player1"].copy()
+df_tmp['First Score'] = df_tmp["Score1"].copy()
+df_tmp['Second Name'] = df_tmp["Player2"].copy()
+df_tmp['Second Score'] = df_tmp["Score2"].copy()
 
 (
     settings_tab,
@@ -46,7 +45,7 @@ for _, row in df_sheet.iterrows():
 with settings_tab:
     with (st.expander("Lob your preferred time period into the analysis court.")):
         # Sample data: list of dates when matches occurred
-        match_dates = list(set(df_sheet["date"].tolist()))
+        match_dates = list(set(df_tmp["date"].tolist()))
 
         all_match_days = st.checkbox('All-court days', value=True)
         specific_match_day = st.checkbox('That one day on the court')

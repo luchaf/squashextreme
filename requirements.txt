@@ -2,10 +2,6 @@ altair
 pandas
 pydeck
 streamlit
-gspread
-google-auth 
-google-auth-oauthlib 
-google-auth-httplib2
 plotly
 tiktoken 
 numexpr
