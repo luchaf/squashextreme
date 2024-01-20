@@ -359,21 +359,52 @@ def upload_page_fixed():
                     st.pyplot(boxes_fig, use_container_width=True)
 
             if submit_edits_button:
+                db = SquashMatchDatabase()
+                db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
+                db.update_csv_file() # Update CSV file with current DB data                            
                 st.write("Table Saved Successfully!")
                 st.session_state['step'] = 'upload'
                 st.experimental_rerun()  # Force a rerun to update the page immediately
+
+
+def enter_table_manually():
+    with st.form("add match results to table"):
+        df_manual_add = pd.DataFrame({
+        'Player1': ["Siegfried"],
+        'Score1': [11],
+        'Player2': ["Horst"],
+        'Score2': [9],
+        'date': ["20240120"],
+        'match_number_day': [1],
+    })
+        edited_df = st.data_editor(
+                                df_manual_add, 
+                                num_rows="dynamic", 
+                                height=1400,
+                                use_container_width=True)
+        # Submission button for the form
+        submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
+
+    if submit_edits_button:
+        db = SquashMatchDatabase()
+        db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
+        db.update_csv_file() # Update CSV file with current DB data                            
+        st.write("Table Saved Successfully!")
+
 
 # Create tab names and corresponding functions
 tab_names = [
     "Pointless list of recorded matches",
     "Pointless online form",
     "Pointless upload page",
+    "Pointless manual table logging"
 ]
 
 tab_functions = [
     show_me_the_list,
     online_form,
     upload_page_fixed,
+    enter_table_manually,
 ]
 
 # Create tabs dynamically

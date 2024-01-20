@@ -21,6 +21,31 @@ from datetime import date
 from match_results.match_results_utils import SquashMatchDatabase
 import matplotlib.pyplot as plt
 
+from fuzzywuzzy import process
+
+def correct_name(name, name_list, threshold=80):
+    """
+    Corrects the name to the most similar one in the provided list if similarity is above the threshold.
+    :param name: The name to be corrected.
+    :param name_list: List of correct names.
+    :param threshold: The minimum similarity score to consider a match.
+    :return: Corrected name.
+    """
+    highest_match = process.extractOne(name, name_list, score_cutoff=threshold)
+    return highest_match[0] if highest_match else name
+
+def correct_names_in_dataframe(df, columns, name_list):
+    """
+    Corrects names in specified DataFrame columns.
+    :param df: The DataFrame containing names.
+    :param columns: List of columns to be corrected.
+    :param name_list: List of correct names.
+    :return: DataFrame with corrected names.
+    """
+    for column in columns:
+        df[column] = df[column].apply(lambda name: correct_name(name, name_list))
+    return df
+
 # Streamlit app
 st.title('Overanalysis Oasis')
 
@@ -30,6 +55,8 @@ title_color = "#FFFFFF"
 db = SquashMatchDatabase()
 df_tmp = db.get_match_results_from_db() # Get match results as a DataFrame
 # tmp hack
+name_list = ['Simon', 'Friedemann', 'Lucas', 'Tobias', 'Peter']
+df_tmp = correct_names_in_dataframe(df_tmp, ['Player1', 'Player2'], name_list)
 df_tmp['First Name'] = df_tmp["Player1"].copy()
 df_tmp['First Score'] = df_tmp["Score1"].copy()
 df_tmp['Second Name'] = df_tmp["Player2"].copy()
@@ -44,6 +71,7 @@ df_tmp['Second Score'] = df_tmp["Score2"].copy()
 
 with settings_tab:
     with (st.expander("Lob your preferred time period into the analysis court.")):
+        df = pd.DataFrame()
         # Sample data: list of dates when matches occurred
         match_dates = list(set(df_tmp["date"].tolist()))
 
