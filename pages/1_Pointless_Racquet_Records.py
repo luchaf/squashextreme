@@ -190,15 +190,21 @@ def online_form():
             if st.session_state['show_confirm']:
                 if st.button("Confirm"):
                     # Determine match_number_day by loading the existing database....
+                    db = SquashMatchDatabase()
+                    df_get_date_match_num = db.get_match_results_from_db()
+                    date_to_filter_on = str(st.session_state['matchday_input'].strftime('%Y%m%d'))                   
+                    match_number_day_to_use = df_get_date_match_num[df_get_date_match_num["date"]==date_to_filter_on]["match_number_day"].max()+1
+                    if np.isnan(match_number_day_to_use):
+                        match_number_day_to_use = 1
+
                     df_add = pd.DataFrame({
                         'Player1': [st.session_state['player1_name']],
                         'Score1': [st.session_state['player1_score']],
                         'Player2': [st.session_state['player2_name']],
                         'Score2': [st.session_state['player2_score']],
                         'date': [int(st.session_state['matchday_input'].strftime('%Y%m%d'))],
-                        'match_number_day':[1],
+                        'match_number_day':[match_number_day_to_use],
                     })
-                    db = SquashMatchDatabase()
                     db.insert_df_into_db(df_add) # Insert new data to databse
                     db.update_csv_file() # update the associated .csv file
 
