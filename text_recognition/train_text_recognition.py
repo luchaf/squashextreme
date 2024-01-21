@@ -35,6 +35,24 @@ from doctr.models import login_to_hub, push_to_hf_hub, recognition
 from doctr.utils.metrics import TextMatch
 #from utils import EarlyStopper, plot_recorder, plot_samples
 
+from doctr.models import ocr_predictor, db_resnet50, parseq
+
+class EarlyStopper:
+    def __init__(self, patience: int = 5, min_delta: float = 0.01):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.min_validation_loss = float("inf")
+
+    def early_stop(self, validation_loss: float) -> bool:
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
 
 def record_lr(
     model: torch.nn.Module,
@@ -178,8 +196,8 @@ def evaluate(model, val_loader, batch_transforms, val_metric, amp=False):
 def main(args):
     print(args)
 
-    if args.push_to_hub:
-        login_to_hub()
+    #if args.push_to_hub:
+        #login_to_hub()
 
     if not isinstance(args.workers, int):
         args.workers = min(16, mp.cpu_count())
@@ -371,7 +389,7 @@ def main(args):
     if args.wb:
         run = wandb.init(
             name=exp_name,
-            project="text-recognition",
+            project="text-recognition-4",
             config={
                 "learning_rate": args.lr,
                 "epochs": args.epochs,
