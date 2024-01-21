@@ -6,9 +6,9 @@ import os
 from doctr.file_utils import is_tf_available
 from doctr.io import DocumentFile
 from doctr.utils.visualization import visualize_page
-from doctr.models import ocr_predictor
+from doctr.models import ocr_predictor, from_hub
 from doctr.models.predictor import OCRPredictor
-from doctr.models import ocr_predictor, db_resnet50, parseq
+from doctr.models import ocr_predictor, db_resnet50, parseq, crnn, crnn_mobilenet_v3_small
 from transformers import DetrFeatureExtractor, TableTransformerForObjectDetection
 
 import io
@@ -20,6 +20,9 @@ from PIL import Image, ExifTags
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+
+
+
 
 
 class SquashMatchDatabase:
@@ -136,7 +139,7 @@ class TableImageProcessor:
         value_boxes_absolute (list): List of word bounding boxes and their respective values.
     """
 
-    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/squashextreme/text_recognition/models/parseq_20240117-214006.pt'):
+    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/squashextreme/text_recognition/models/crnn_mobilenet_v3_small_20240121-191826.pt'):
         """
         The constructor for TableImageProcessor class.
 
@@ -171,10 +174,8 @@ class TableImageProcessor:
         # Initialize the table transformer model for object detection
         tatr_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-transformer-structure-recognition")
 
-        # Initialize the recognition model from the doctr package
-        reco_model = parseq(pretrained=False, pretrained_backbone=False)
-        reco_params = torch.load(model_path, map_location="cpu")
-        reco_model.load_state_dict(reco_params)
+        # Initialize the recognition model
+        reco_model = from_hub('luchaf/crnn_mobilenet_v3_small_pointless_1')
 
         # Initialize the OCR predictor model for text detection and recognition
         model_ocr = ocr_predictor(det_arch='db_resnet50', reco_arch=reco_model, pretrained=True)
