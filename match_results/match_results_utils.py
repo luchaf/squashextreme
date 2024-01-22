@@ -382,7 +382,10 @@ class TableImageProcessor:
                 # Crop and save image
                 cropped_image = self.image.crop((x1, y1, x2, y2))
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-                filename = f"img_{edited_value}_{timestamp}.png"
+                if original_value != edited_value:
+                    filename = f"img_{edited_value}_corrected_{timestamp}.png"
+                else:
+                    filename = f"img_{edited_value}_accepted_{timestamp}.png"
                 filepath = os.path.join(images_folder, filename)
                 cropped_image.save(filepath)
 
