@@ -11,6 +11,30 @@ import io
 import itertools
 import plotly.graph_objs as go
 import time
+from fuzzywuzzy import process
+
+def correct_name(name, name_list, threshold=85):
+    """
+    Corrects the name to the most similar one in the provided list if similarity is above the threshold.
+    :param name: The name to be corrected.
+    :param name_list: List of correct names.
+    :param threshold: The minimum similarity score to consider a match.
+    :return: Corrected name.
+    """
+    highest_match = process.extractOne(name, name_list, score_cutoff=threshold)
+    return highest_match[0] if highest_match else name
+
+def correct_names_in_dataframe(df, columns, name_list):
+    """
+    Corrects names in specified DataFrame columns.
+    :param df: The DataFrame containing names.
+    :param columns: List of columns to be corrected.
+    :param name_list: List of correct names.
+    :return: DataFrame with corrected names.
+    """
+    for column in columns:
+        df[column] = df[column].apply(lambda name: correct_name(name, name_list))
+    return df
 
 
 def extract_data_from_games(games, date):

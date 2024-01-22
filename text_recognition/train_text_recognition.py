@@ -16,7 +16,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import wandb
 from torch.optim.lr_scheduler import CosineAnnealingLR, MultiplicativeLR, OneCycleLR
 from torch.utils.data import DataLoader, RandomSampler, SequentialSampler
 from torchvision.transforms.v2 import (
@@ -33,9 +32,41 @@ from doctr import transforms as T
 from doctr.datasets import VOCABS, RecognitionDataset, WordGenerator
 from doctr.models import login_to_hub, push_to_hf_hub, recognition
 from doctr.utils.metrics import TextMatch
+
+import math
+import matplotlib.pyplot as plt
+import numpy as np
 #from utils import EarlyStopper, plot_recorder, plot_samples
 
 from doctr.models import ocr_predictor, db_resnet50, parseq
+
+import wandb
+from wandb import Table
+
+
+def plot_samples(images, targets):
+    # Unnormalize image
+    num_samples = min(len(images), 12)
+    num_cols = min(len(images), 4)
+    num_rows = int(math.ceil(num_samples / num_cols))
+    _, axes = plt.subplots(num_rows, num_cols, figsize=(20, 5))
+    for idx in range(num_samples):
+        img = (255 * images[idx].numpy()).round().clip(0, 255).astype(np.uint8)
+        if img.shape[0] == 3 and img.shape[2] != 3:
+            img = img.transpose(1, 2, 0)
+
+        row_idx = idx // num_cols
+        col_idx = idx % num_cols
+        ax = axes[row_idx] if num_rows > 1 else axes
+        ax = ax[col_idx] if num_cols > 1 else ax
+
+        ax.imshow(img)
+        ax.set_title(targets[idx])
+    # Disable axis
+    for ax in axes.ravel():
+        ax.axis("off")
+
+    plt.show()
 
 class EarlyStopper:
     def __init__(self, patience: int = 5, min_delta: float = 0.01):
@@ -167,6 +198,9 @@ def evaluate(model, val_loader, batch_transforms, val_metric, amp=False):
     model.eval()
     # Reset val metric
     val_metric.reset()
+    # Create a W&B Table
+    val_table = Table(columns=["Image", "Predicted", "Target", "Match", "Score"])
+
     # Validation loop
     val_loss, batch_cnt = 0, 0
     for images, targets in tqdm(val_loader):
@@ -180,17 +214,24 @@ def evaluate(model, val_loader, batch_transforms, val_metric, amp=False):
             out = model(images, targets, return_preds=True)
         # Compute metric
         if len(out["preds"]):
-            words, _ = zip(*out["preds"])
+            words, scores = zip(*out["preds"])
         else:
-            words = []
+            words, scores = [], []
         val_metric.update(targets, words)
+
+        # Log images, predictions, targets, match status, and scores to W&B Table
+        for img, pred, target, score in zip(images, words, targets, scores):
+            match = pred == target
+            if match==False:
+                val_table.add_data(wandb.Image(img.cpu()), pred, target, match, score)
 
         val_loss += out["loss"].item()
         batch_cnt += 1
 
     val_loss /= batch_cnt
     result = val_metric.summary()
-    return val_loss, result["raw"], result["unicase"]
+
+    return val_loss, result["raw"], result["unicase"], val_table
 
 
 def main(args):
@@ -389,7 +430,7 @@ def main(args):
     if args.wb:
         run = wandb.init(
             name=exp_name,
-            project="text-recognition-4",
+            project="text-recognition-models",
             config={
                 "learning_rate": args.lr,
                 "epochs": args.epochs,
@@ -416,11 +457,17 @@ def main(args):
         fit_one_epoch(model, train_loader, batch_transforms, optimizer, scheduler, amp=args.amp)
 
         # Validation loop at the end of each epoch
-        val_loss, exact_match, partial_match = evaluate(model, val_loader, batch_transforms, val_metric, amp=args.amp)
+        val_loss, exact_match, partial_match, val_table = evaluate(model, val_loader, batch_transforms, val_metric, amp=args.amp)
+        
+        # check if it's the first epoch:
+        if epoch == 0:
+            first_epoch_table = val_table
+                    
         if val_loss < min_loss:
             print(f"Validation loss decreased {min_loss:.6} --> {val_loss:.6}: saving state...")
             torch.save(model.state_dict(), f"models/{exp_name}.bin")
             min_loss = val_loss
+            best_epoch = epoch
         print(
             f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "
             f"(Exact: {exact_match:.2%} | Partial: {partial_match:.2%})"
@@ -434,9 +481,22 @@ def main(args):
                     "partial_match": partial_match,
                 }
             )
+            if first_epoch_table is not None:
+                wandb.log({"First Epoch Validation Results": first_epoch_table})
+
         if args.early_stop and early_stopper.early_stop(val_loss):
             print("Training halted early due to reaching patience limit.")
             break
+
+    # Log the table for the best epoch
+    # Optionally, reload the best model state if saved during training
+    model.load_state_dict(torch.load(f"models/{exp_name}.bin"))
+    # Re-run evaluation for the best epoch
+    _, _, _, best_val_table = evaluate(model, val_loader, batch_transforms, val_metric, amp=args.amp)
+    # Log the table for the best epoch
+    if args.wb:
+        wandb.log({"Best Epoch (Epoch " + str(best_epoch + 1) + ") Validation Results": best_val_table})
+
     if args.wb:
         run.finish()
 

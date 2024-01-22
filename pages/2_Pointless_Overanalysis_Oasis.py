@@ -13,7 +13,8 @@ from pointless_utils import (
     cumulative_win_ratio_over_time,
     entities_face_to_face_over_time_abs, 
     entities_face_to_face_over_time_rel, 
-    closeness_of_matches_over_time
+    closeness_of_matches_over_time,
+    correct_names_in_dataframe,
     )
 import streamlit as st
 import pandas as pd
@@ -21,30 +22,6 @@ from datetime import date
 from match_results.match_results_utils import SquashMatchDatabase
 import matplotlib.pyplot as plt
 
-from fuzzywuzzy import process
-
-def correct_name(name, name_list, threshold=80):
-    """
-    Corrects the name to the most similar one in the provided list if similarity is above the threshold.
-    :param name: The name to be corrected.
-    :param name_list: List of correct names.
-    :param threshold: The minimum similarity score to consider a match.
-    :return: Corrected name.
-    """
-    highest_match = process.extractOne(name, name_list, score_cutoff=threshold)
-    return highest_match[0] if highest_match else name
-
-def correct_names_in_dataframe(df, columns, name_list):
-    """
-    Corrects names in specified DataFrame columns.
-    :param df: The DataFrame containing names.
-    :param columns: List of columns to be corrected.
-    :param name_list: List of correct names.
-    :return: DataFrame with corrected names.
-    """
-    for column in columns:
-        df[column] = df[column].apply(lambda name: correct_name(name, name_list))
-    return df
 
 # Streamlit app
 st.title('Overanalysis Oasis')

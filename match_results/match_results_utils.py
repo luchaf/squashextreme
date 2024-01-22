@@ -139,27 +139,27 @@ class TableImageProcessor:
         value_boxes_absolute (list): List of word bounding boxes and their respective values.
     """
 
-    def __init__(self, image_path, model_path='/teamspace/studios/this_studio/squashextreme/text_recognition/models/crnn_mobilenet_v3_small_20240121-191826.pt'):
+    def __init__(self, image_path, text_recognition_model_path='luchaf/crnn_mobilenet_v3_large_pointless_1'):
         """
         The constructor for TableImageProcessor class.
 
         Parameters:
             image_path (str): The path to the image file to be processed.
-            model_path (str): The path to the pretrained model.
+            text_recognition_model_path (str): The path to the pretrained text recognition model.
         """
         self.image_path = image_path
-        self.feature_extractor, self.tatr_model, self.reco_model, self.model_ocr = self.initialize_models(model_path)
+        self.feature_extractor, self.tatr_model, self.reco_model, self.model_ocr = self.initialize_models(text_recognition_model_path)
         self.image = self.process_image(image_path)
         self.cell_locations = []
         self.value_boxes_absolute = []
         self.value_boxes_relative = []
 
-    def initialize_models(self, model_path):
+    def initialize_models(self, text_recognition_model_path):
         """
         Initializes and loads the models required for image processing and OCR.
 
         Parameters:
-            model_path (str): The path to the pretrained model.
+            text_recognition_model_path (str): The path to the pretrained text recognition model.
 
         Returns:
             tuple: Tuple containing:
@@ -175,7 +175,7 @@ class TableImageProcessor:
         tatr_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-transformer-structure-recognition")
 
         # Initialize the recognition model
-        reco_model = from_hub('luchaf/crnn_mobilenet_v3_small_pointless_1')
+        reco_model = from_hub(text_recognition_model_path)
 
         # Initialize the OCR predictor model for text detection and recognition
         model_ocr = ocr_predictor(det_arch='db_resnet50', reco_arch=reco_model, pretrained=True)

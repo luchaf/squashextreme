@@ -12,7 +12,6 @@
 # import os
 # st.write(os.getcwd())
 
-
 import io
 import os
 import tempfile
@@ -34,11 +33,11 @@ from streamlit_cropper import st_cropper
 from streamlit_img_label import st_img_label
 from streamlit_img_label.manage import ImageManager, ImageDirManager
 from match_results.match_results_utils import SquashMatchDatabase, TableImageProcessor
-
+from datetime import datetime
+from pointless_utils import correct_names_in_dataframe
 
 # Set the page to wide mode
 st.set_page_config(layout="wide")
-
 
 
 def load_predictor(
@@ -322,6 +321,19 @@ def upload_page_fixed():
             processor.compute_boxes()
             processor.extract_and_map_words()
             df = processor.map_values_to_dataframe()
+            df = df.reset_index(drop=True).copy()
+            name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]
+            col_list = df.columns.tolist()
+            df = correct_names_in_dataframe(df, col_list, name_list)
+            # Set the first row as the header
+            df.columns = df.iloc[0]
+            # Drop the first row
+            df = df.drop(df.index[0])             
+            if "date" not in df.columns:
+                df["date"] = datetime.now().strftime("%Y%m%d")
+            if "match_number_day" not in df.columns:
+                df["match_number_day"] = range(1, len(df) + 1)
+
 
             # Wrap table editing and submission button in a form
             with st.form("edit_table_form"):

@@ -163,3 +163,8 @@ squashextreme-873fb8fb5fec.json
 *.JPG
 *.png
 *.json
+*.wandb
+*.bin
+*.yaml
+*requirements.txt
+text_recognition/wandb/latest-run
