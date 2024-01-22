@@ -317,22 +317,39 @@ def upload_page_fixed():
                 doc = DocumentFile.from_images(tmp_file_path)
 
             page = doc[0]
+
+            # Create an instance of the TableImageProcessor class with the image located at tmp_file_path. 
+            # During initialization, the image is processed, and the necessary models
+            #  (DETR feature extractor, table transformer, recognition model, OCR predictor) are loaded.
             processor = TableImageProcessor(tmp_file_path)
+
+            # Get the bounding boxes of the table cells using the table transformer model. 
+            # This information is crucial to understand the layout and structure of the table in the image.
             processor.compute_boxes()
+            
+            # Apply the OCR model to extract words from the image. 
+            # Then, map these words to their respective bounding boxes, preparing the data for insertion into a DataFrame.
             processor.extract_and_map_words()
-            df = processor.map_values_to_dataframe()
-            df = df.reset_index(drop=True).copy()
-            name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]
-            col_list = df.columns.tolist()
-            df = correct_names_in_dataframe(df, col_list, name_list)
+
+            # This step takes the processed information (words and their locations) and maps them into a structured format, 
+            # creating a pandas DataFrame. Each cell in the DataFrame corresponds to a cell in the table image, 
+            # filled with the extracted text.
+            df_from_table_transformer  = processor.map_values_to_dataframe()
+
+
+            #df = df.reset_index(drop=True).copy()
+            #name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]
+            #col_list = df.columns.tolist()
+            #df = correct_names_in_dataframe(df, col_list, name_list)
+            
             # Set the first row as the header
-            df.columns = df.iloc[0]
-            # Drop the first row
-            df = df.drop(df.index[0])             
-            if "date" not in df.columns:
-                df["date"] = datetime.now().strftime("%Y%m%d")
-            if "match_number_day" not in df.columns:
-                df["match_number_day"] = range(1, len(df) + 1)
+            # df.columns = df.iloc[0]
+            # # Drop the first row
+            # df = df.drop(df.index[0])             
+            # if "date" not in df.columns:
+            #     df["date"] = datetime.now().strftime("%Y%m%d")
+            # if "match_number_day" not in df.columns:
+            #     df["match_number_day"] = range(1, len(df) + 1)
 
 
             # Wrap table editing and submission button in a form
@@ -350,7 +367,7 @@ def upload_page_fixed():
                 with col1:
                     st.write("Table transformer + Text recognition result:")
                     edited_df = st.data_editor(
-                        df, 
+                        df_from_table_transformer , 
                         num_rows="dynamic", 
                         height=1400, 
                         use_container_width=True)
@@ -367,9 +384,15 @@ def upload_page_fixed():
                     st.pyplot(boxes_fig, use_container_width=True)
 
             if submit_edits_button:
-                db = SquashMatchDatabase()
-                db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
-                db.update_csv_file() # Update CSV file with current DB data                            
+                processor.save_corrected_data_for_retraining(edited_df)
+
+
+
+
+                # db = SquashMatchDatabase()
+                # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
+                # db.update_csv_file() # Update CSV file with current DB data
+
                 st.write("Table Saved Successfully!")
                 st.session_state['step'] = 'upload'
                 st.experimental_rerun()  # Force a rerun to update the page immediately
@@ -426,6 +449,7 @@ selected_function()
 
 
 # # pip install pascal_voc_writer
+
 
 
 

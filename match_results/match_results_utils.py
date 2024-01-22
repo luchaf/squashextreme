@@ -21,6 +21,8 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+import json
+from datetime import datetime
 
 
 
@@ -344,6 +346,7 @@ class TableImageProcessor:
                     else:
                         df.at[row_idx, col_idx] += value
                     break
+        self.df_from_table_transformer = df
         return df
 
     def is_inside_box(self, point, box):
@@ -360,6 +363,35 @@ class TableImageProcessor:
         x, y = point
         x1, y1, x2, y2 = box
         return x1 <= x <= x2 and y1 <= y <= y2
+
+    def save_corrected_data_for_retraining(self, edited_df, retraining_folder='retraining'):
+        if not os.path.exists(retraining_folder):
+            os.makedirs(retraining_folder)
+        images_folder = os.path.join(retraining_folder, 'images')
+        if not os.path.exists(images_folder):
+            os.makedirs(images_folder)
+
+        labels = {}
+        for row_idx, (original_row, edited_row) in enumerate(zip(self.df_from_table_transformer.itertuples(index=False), edited_df.itertuples(index=False))):
+            for col_idx, (original_value, edited_value) in enumerate(zip(original_row, edited_row)):
+                #if original_value != edited_value:
+                # Get the bounding box for this cell
+                box = self.cell_locations[row_idx * self.df_from_table_transformer.shape[1] + col_idx]
+                x1, y1, x2, y2 = box
+
+                # Crop and save image
+                cropped_image = self.image.crop((x1, y1, x2, y2))
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                filename = f"img_{edited_value}_{timestamp}.png"
+                filepath = os.path.join(images_folder, filename)
+                cropped_image.save(filepath)
+
+                # Use edited value as label
+                labels[filename] = edited_value
+
+        # Save labels to JSON file
+        with open(os.path.join(retraining_folder, 'labels.json'), 'w') as label_file:
+            json.dump(labels, label_file, indent=4)
 
     ##############################################################################
     ### rule based table extraction with a sprinkle of machine learning ###
