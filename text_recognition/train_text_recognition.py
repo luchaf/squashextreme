@@ -28,6 +28,7 @@ from torchvision.transforms.v2 import (
 )
 from tqdm.auto import tqdm
 
+from doctr.models import ocr_predictor, from_hub
 from doctr import transforms as T
 from doctr.datasets import VOCABS, RecognitionDataset, WordGenerator
 from doctr.models import login_to_hub, push_to_hf_hub, recognition
@@ -291,7 +292,9 @@ def main(args):
     batch_transforms = Normalize(mean=(0.694, 0.695, 0.693), std=(0.299, 0.296, 0.301))
 
     # Load doctr model
-    model = recognition.__dict__[args.arch](pretrained=args.pretrained, vocab=vocab)
+    #model = recognition.__dict__[args.arch](pretrained=args.pretrained, vocab=vocab)
+    text_recognition_model_path = 'luchaf/crnn_mobilenet_v3_large_pointless_1'
+    model = from_hub(text_recognition_model_path)
 
     # Resume weights
     if isinstance(args.resume, str):
@@ -430,7 +433,7 @@ def main(args):
     if args.wb:
         run = wandb.init(
             name=exp_name,
-            project="text-recognition-models",
+            project="text-recognition-models-retrain",
             config={
                 "learning_rate": args.lr,
                 "epochs": args.epochs,
@@ -454,6 +457,12 @@ def main(args):
     if args.early_stop:
         early_stopper = EarlyStopper(patience=args.early_stop_epochs, min_delta=args.early_stop_delta)
     for epoch in range(args.epochs):
+        # W&B
+        if args.wb:
+            if epoch == 0:
+                _, _, _, zero_epoch_table = evaluate(model, val_loader, batch_transforms, val_metric, amp=args.amp)
+                wandb.log({"Zero Epoch Validation Results": zero_epoch_table})
+
         fit_one_epoch(model, train_loader, batch_transforms, optimizer, scheduler, amp=args.amp)
 
         # Validation loop at the end of each epoch
@@ -468,6 +477,8 @@ def main(args):
             torch.save(model.state_dict(), f"models/{exp_name}.bin")
             min_loss = val_loss
             best_epoch = epoch
+            if args.wb:
+                wandb.log({"Best Epoch (Epoch " + str(best_epoch + 1) + ") Validation Results": val_table})
         print(
             f"Epoch {epoch + 1}/{args.epochs} - Validation loss: {val_loss:.6} "
             f"(Exact: {exact_match:.2%} | Partial: {partial_match:.2%})"

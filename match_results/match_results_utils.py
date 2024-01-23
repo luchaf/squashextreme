@@ -364,12 +364,12 @@ class TableImageProcessor:
         x1, y1, x2, y2 = box
         return x1 <= x <= x2 and y1 <= y <= y2
 
-    def save_corrected_data_for_retraining(self, edited_df, retraining_folder='squashextreme/text_recognition/retraining'):
+    def save_corrected_data_for_retraining(self, edited_df, retraining_folder='squashextreme/text_recognition/data/user_entries/annotations'):
         if not os.path.exists(retraining_folder):
             os.makedirs(retraining_folder)
-        images_folder = os.path.join(retraining_folder, 'images')
-        if not os.path.exists(images_folder):
-            os.makedirs(images_folder)
+        #images_folder = os.path.join(retraining_folder, 'images')
+        #if not os.path.exists(images_folder):
+        #    os.makedirs(images_folder)
 
         labels = {}
         for row_idx, (original_row, edited_row) in enumerate(zip(self.df_from_table_transformer.itertuples(index=False), edited_df.itertuples(index=False))):
@@ -386,7 +386,7 @@ class TableImageProcessor:
                     filename = f"img_{edited_value}_corrected_{timestamp}.png"
                 else:
                     filename = f"img_{edited_value}_accepted_{timestamp}.png"
-                filepath = os.path.join(images_folder, filename)
+                filepath = os.path.join(retraining_folder, filename)
                 cropped_image.save(filepath)
 
                 # Use edited value as label
