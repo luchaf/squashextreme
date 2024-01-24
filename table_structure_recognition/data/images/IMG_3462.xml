@@ -1,0 +1,235 @@
+<annotation>
+    <folder>images</folder>
+    <filename>IMG_3462.JPG</filename>
+    <path>/teamspace/studios/this_studio/squashextreme/table_structure_recognition/data/images/IMG_3462.JPG</path>
+    <source>
+        <database>Unknown</database>
+    </source>
+    <size>
+        <width>3024</width>
+        <height>4032</height>
+        <depth>3</depth>
+    </size>
+    <segmented>0</segmented>
+    <object>
+        <name>table column</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>604</xmin>
+            <ymin>569</ymin>
+            <xmax>1109</xmax>
+            <ymax>2969</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table column</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>1092</xmin>
+            <ymin>569</ymin>
+            <xmax>1547</xmax>
+            <ymax>2964</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>1552</xmin>
+            <ymin>541</ymin>
+            <xmax>1985</xmax>
+            <ymax>2960</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>1984</xmin>
+            <ymin>547</ymin>
+            <xmax>2411</xmax>
+            <ymax>2943</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>564</ymin>
+            <xmax>2418</xmax>
+            <ymax>713</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>597</xmin>
+            <ymin>714</ymin>
+            <xmax>2407</xmax>
+            <ymax>875</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>875</ymin>
+            <xmax>2389</xmax>
+            <ymax>1030</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>609</xmin>
+            <ymin>1019</ymin>
+            <xmax>2384</xmax>
+            <ymax>1168</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>609</xmin>
+            <ymin>1157</ymin>
+            <xmax>2390</xmax>
+            <ymax>1329</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>614</xmin>
+            <ymin>1324</ymin>
+            <xmax>2406</xmax>
+            <ymax>1468</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>597</xmin>
+            <ymin>1468</ymin>
+            <xmax>2401</xmax>
+            <ymax>1606</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>609</xmin>
+            <ymin>1595</ymin>
+            <xmax>2407</xmax>
+            <ymax>1761</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>597</xmin>
+            <ymin>1756</ymin>
+            <xmax>2418</xmax>
+            <ymax>1905</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>597</xmin>
+            <ymin>1894</ymin>
+            <xmax>2435</xmax>
+            <ymax>2043</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>2050</ymin>
+            <xmax>2418</xmax>
+            <ymax>2199</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>609</xmin>
+            <ymin>2194</ymin>
+            <xmax>2413</xmax>
+            <ymax>2343</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>2344</ymin>
+            <xmax>2401</xmax>
+            <ymax>2482</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>2476</ymin>
+            <xmax>2407</xmax>
+            <ymax>2625</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>2620</ymin>
+            <xmax>2418</xmax>
+            <ymax>2769</ymax>
+        </bndbox>
+    </object>    <object>
+        <name>table row</name>
+        <pose>Unspecified</pose>
+        <truncated>0</truncated>
+        <difficult>0</difficult>
+        <bndbox>
+            <xmin>603</xmin>
+            <ymin>2764</ymin>
+            <xmax>2424</xmax>
+            <ymax>2948</ymax>
+        </bndbox>
+    </object>
+</annotation>

@@ -489,6 +489,8 @@ class TableImageProcessor:
 
         # Determine the number of rows and columns
         n_rows, n_cols = len(np.unique(labels_y)), len(np.unique(labels_x))
+        n_rows = 16
+        n_cols = 4
 
         # Get minimum and maximum values for x and y coordinates
         min_x, max_x = self.get_min_max(data, 0)

@@ -155,7 +155,7 @@ def upload_page_fixed():
         # Define the path for the folder one level above the current script
         current_script_path = os.path.dirname(__file__)
         parent_directory = os.path.join(current_script_path, os.pardir)
-        target_folder = os.path.normpath(os.path.join(parent_directory, 'data/images'))
+        target_folder = os.path.normpath(os.path.join(parent_directory, 'table_structure_recognition/data/images'))
         # Make sure the target directory exists, if not, create it
         if not os.path.exists(target_folder):
             os.makedirs(target_folder)
@@ -213,7 +213,20 @@ def upload_page_fixed():
             # This step takes the processed information (words and their locations) and maps them into a structured format, 
             # creating a pandas DataFrame. Each cell in the DataFrame corresponds to a cell in the table image, 
             # filled with the extracted text.
-            df_from_table_transformer  = processor.map_values_to_dataframe()
+            #df_from_table_transformer  = processor.map_values_to_dataframe()
+            
+            # Assuming you have already run extract_and_map_words
+            data = processor.value_boxes_absolute
+
+            # You need to determine suitable values for eps_x and eps_y
+            eps_x = 0.05  # Example value, adjust as needed
+            eps_y = 0.05  # Example value, adjust as needed
+
+            # Now call create_table with all required arguments
+            df_from_table_transformer = processor.create_table(data, eps_x, eps_y)
+
+            
+            #df_from_table_transformer  = processor.create_table()
 
             #df = df.reset_index(drop=True).copy()
             #name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]

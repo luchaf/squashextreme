@@ -141,8 +141,8 @@ if __name__ == "__main__":
     # Define the path for the folder one level above the current script
     current_script_path = os.path.dirname(__file__)
     parent_directory = os.path.join(current_script_path, os.pardir)
-    source_folder = os.path.normpath(os.path.join(parent_directory, 'data'))
-    target_folder = os.path.normpath(os.path.join(parent_directory, 'data/images'))
+    source_folder = os.path.normpath(os.path.join(parent_directory, 'table_structure_recognition/data'))
+    target_folder = os.path.normpath(os.path.join(parent_directory, 'table_structure_recognition/data/images'))
 
     run(target_folder, ["table row", "table column"])
 
