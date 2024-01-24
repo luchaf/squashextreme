@@ -33,7 +33,7 @@ from streamlit_cropper import st_cropper
 from streamlit_img_label import st_img_label
 from streamlit_img_label.manage import ImageManager, ImageDirManager
 from match_results.match_results_utils import SquashMatchDatabase, TableImageProcessor
-from datetime import datetime
+from datetime import datetime, date
 from pointless_utils import correct_names_in_dataframe
 
 # Set the page to wide mode
@@ -95,127 +95,6 @@ def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.devi
         seg_map = out["out_map"].to("cpu").numpy()
 
     return seg_map
-
-
-# Define functions for each tab
-def show_me_the_list():
-    db = SquashMatchDatabase()
-    df = db.get_match_results_from_db() # Get match results as a DataFrame
-    st.dataframe(df)
-    return df
-
-def online_form():
-    # Define a list of player names
-    player_names = ["Friedemann", "Lucas", "Peter", "Simon", "Tobias"]
-
-    def reset_session_state():
-        """Helper function to reset session state."""
-        st.session_state['player1_name'] = ''
-        st.session_state['player1_score'] = None
-        st.session_state['player2_name'] = ''
-        st.session_state['player2_score'] = None
-        st.session_state['matchday_input'] = None
-        st.session_state['show_confirm'] = False
-        st.session_state['data_written'] = False
-        
-    def display_enter_match_results():
-        # Initialize session state values if not already set
-        if 'player1_name' not in st.session_state:
-            st.session_state['player1_name'] = ''
-        if 'player1_score' not in st.session_state:
-            st.session_state['player1_score'] = None
-        if 'player2_name' not in st.session_state:
-            st.session_state['player2_name'] = ''
-        if 'player2_score' not in st.session_state:
-            st.session_state['player2_score'] = None
-        if 'matchday_input' not in st.session_state:
-            st.session_state['matchday_input'] = None
-        if 'show_confirm' not in st.session_state:
-            st.session_state['show_confirm'] = False
-        if 'data_written' not in st.session_state:
-            st.session_state['data_written'] = False
-
-        if st.session_state['data_written']:
-            st.success("Successfully wrote match result to database. Do you want to enter a new match result?")
-            if st.button("Enter New Match Result"):
-                reset_session_state()
-                st.experimental_rerun()
-        else:
-            st.title("Racquet Records: Document your match results")
-        
-            st.write("Log your praiseworthy or pitiful match results here:")
-            
-            # Use selectbox for player names with an option to add a new player
-            selected_player1 = st.selectbox("Player 1 Name", [''] + player_names + ['Add New Player'])
-        
-            if selected_player1 == 'Add New Player':
-                new_player_name = st.text_input("Enter New Player Name")
-                if new_player_name.strip() != '':
-                    player_names.append(new_player_name.strip())
-                    selected_player1 = new_player_name.strip()
-
-            if selected_player1 != '':
-                # Use number input for player 1 score with a default value of 0
-                st.session_state['player1_name'] = selected_player1
-                st.session_state['player1_score'] = st.number_input("Player 1 Score", min_value=0, value=st.session_state.get('player1_score', 0), step=1)
-                
-                if st.session_state['player1_score'] is not None:
-                    # Use selectbox for player 2 name with an option to add a new player
-                    selected_player2 = st.selectbox("Player 2 Name", [''] + player_names + ['Add New Player'])
-        
-                    if selected_player2 == 'Add New Player':
-                        new_player_name = st.text_input("Enter New Player Name")
-                        if new_player_name.strip() != '':
-                            player_names.append(new_player_name.strip())
-                            selected_player2 = new_player_name.strip()
-
-                    if selected_player2 != '':
-                        # Use number input for player 2 score with a default value of 0
-                        st.session_state['player2_name'] = selected_player2
-                        st.session_state['player2_score'] = st.number_input("Player 2 Score", min_value=0, value=st.session_state.get('player2_score', 0), step=1)
-                        if st.session_state['player2_score'] is not None:
-                            st.session_state['matchday_input'] = st.date_input("Matchday", st.session_state['matchday_input'] if st.session_state['matchday_input'] else None)
-        
-            if st.session_state['matchday_input'] and (st.session_state['player1_name'] or st.session_state['player2_name']):
-                if st.button("Preview"):
-                    st.subheader("Confirm the following match result:")
-                    st.write(f"{st.session_state['player1_name']}: {st.session_state['player1_score']} - {st.session_state['player2_name']}: {st.session_state['player2_score']} on {st.session_state['matchday_input']}")
-                    st.session_state['show_confirm'] = True
-        
-            if st.session_state['show_confirm']:
-                if st.button("Confirm"):
-                    # Determine match_number_day by loading the existing database....
-                    db = SquashMatchDatabase()
-                    df_get_date_match_num = db.get_match_results_from_db()
-                    date_to_filter_on = str(st.session_state['matchday_input'].strftime('%Y%m%d'))                   
-                    match_number_day_to_use = df_get_date_match_num[df_get_date_match_num["date"]==date_to_filter_on]["match_number_day"].max()+1
-                    if np.isnan(match_number_day_to_use):
-                        match_number_day_to_use = 1
-
-                    df_add = pd.DataFrame({
-                        'Player1': [st.session_state['player1_name']],
-                        'Score1': [st.session_state['player1_score']],
-                        'Player2': [st.session_state['player2_name']],
-                        'Score2': [st.session_state['player2_score']],
-                        'date': [int(st.session_state['matchday_input'].strftime('%Y%m%d'))],
-                        'match_number_day':[match_number_day_to_use],
-                    })
-                    db.insert_df_into_db(df_add) # Insert new data to databse
-                    db.update_csv_file() # update the associated .csv file
-
-                    # Clear the inputs and flag data as written
-                    st.session_state['data_written'] = True               
-                    # Clear the inputs
-                    st.session_state['player1_name'] = ''
-                    st.session_state['player1_score'] = None
-                    st.session_state['player2_name'] = ''
-                    st.session_state['player2_score'] = None
-                    st.session_state['matchday_input'] = None
-                    st.session_state['show_confirm'] = False
-        
-                    st.experimental_rerun()  # This will rerun the script and update the UI with cleared inputs
-
-    display_enter_match_results()
 
 
 def upload_page_fixed():
@@ -336,7 +215,6 @@ def upload_page_fixed():
             # filled with the extracted text.
             df_from_table_transformer  = processor.map_values_to_dataframe()
 
-
             #df = df.reset_index(drop=True).copy()
             #name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]
             #col_list = df.columns.tolist()
@@ -366,6 +244,8 @@ def upload_page_fixed():
 
                 with col1:
                     st.write("Table transformer + Text recognition result:")
+                    match_day_date = st.date_input('Date', value=date.today())
+                    match_day_date = match_day_date.strftime('%Y%m%d')
                     edited_df = st.data_editor(
                         df_from_table_transformer , 
                         num_rows="dynamic", 
@@ -385,9 +265,8 @@ def upload_page_fixed():
 
             if submit_edits_button:
                 processor.save_corrected_data_for_retraining(edited_df)
-
-
-
+                edited_df["date"] = match_day_date
+                edited_df["match_number_day"] = range(1, len(edited_df) + 1)
 
                 # db = SquashMatchDatabase()
                 # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
@@ -400,57 +279,79 @@ def upload_page_fixed():
 
 def enter_table_manually():
     with st.form("add match results to table"):
-        df_manual_add = pd.DataFrame({
-        'Player1': ["Siegfried"],
-        'Score1': [11],
-        'Player2': ["Horst"],
-        'Score2': [9],
-        'date': ["20240120"],
-        'match_number_day': [1],
-    })
+        df_manual_add = pd.DataFrame(
+        {
+        'Player1': ["Friede"],
+        'Score1': [1],
+        'Player2': ["Peter"],
+        'Score2': [1],
+        })
+        match_day_date = st.date_input('Date', value=date.today())
+        match_day_date = match_day_date.strftime('%Y%m%d')
         edited_df = st.data_editor(
                                 df_manual_add, 
+                                column_config={
+                                     "Player1": st.column_config.SelectboxColumn(
+                                        "Player1", 
+                                        options=["Friede", "Lucas", "Peter", "Simon", "Tobias"],
+                                        default="Friede",
+                                        required=True,
+                                        ),
+                                    "Score1": st.column_config.NumberColumn(
+                                                "Score2",
+                                                help="Achieved score of Player1",
+                                                min_value=0,
+                                                max_value=100,
+                                                step=1,
+                                                format="%d",
+                                            ),
+                                     "Player2": st.column_config.SelectboxColumn(
+                                        "Player2", 
+                                        options=["Friede", "Lucas", "Peter", "Simon", "Tobias"],
+                                        default="Peter",
+                                        required=True,
+                                        ),
+                                    "Score2": st.column_config.NumberColumn(
+                                                "Score2",
+                                                help="Achieved score of Player2",
+                                                min_value=0,
+                                                max_value=100,
+                                                step=1,
+                                                format="%d",
+                                            ),
+                                },
                                 num_rows="dynamic", 
-                                height=1400,
-                                use_container_width=True)
+                                use_container_width=True,
+                                column_order=("Player1", "Score1", "Player2", "Score2")
+                                )
         # Submission button for the form
         submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
 
     if submit_edits_button:
-        db = SquashMatchDatabase()
-        db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
-        db.update_csv_file() # Update CSV file with current DB data                            
+        edited_df["date"] = match_day_date
+        edited_df["match_number_day"] = range(1, len(edited_df) + 1)
+        # db = SquashMatchDatabase()
+        # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
+        # db.update_csv_file() # Update CSV file with current DB data                            
         st.write("Table Saved Successfully!")
 
 
 # Create tab names and corresponding functions
 tab_names = [
-    "Pointless list of recorded matches",
-    "Pointless online form",
-    "Pointless upload page",
-    "Pointless manual table logging"
+    "Digital - Enter match results directly in the online form!",
+    "Analog - Upload photo of your match results and let the AI extract the match results.",
 ]
 
 tab_functions = [
-    show_me_the_list,
-    online_form,
+    enter_table_manually,    
     upload_page_fixed,
-    enter_table_manually,
 ]
 
 # Create tabs dynamically
-selected_tab = st.selectbox("Select an option to enter your match result", tab_names)
+selected_tab = st.radio("How do you want to track your match results?", tab_names)
 tab_index = tab_names.index(selected_tab)
 selected_function = tab_functions[tab_index]
 
 # Execute the selected function
 selected_function()
-
-
-
 # # pip install pascal_voc_writer
-
-
-
-
-
