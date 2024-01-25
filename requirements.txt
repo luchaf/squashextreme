@@ -28,6 +28,7 @@ unidecode>=1.0.0
 huggingface-hub>=0.5.0
 scikit-learn
 wandb
+streamlit-drawable-canvas
 streamlit-cropper
 streamlit-img-label
 pascal_voc_writer

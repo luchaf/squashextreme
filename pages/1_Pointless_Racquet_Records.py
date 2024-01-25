@@ -29,6 +29,7 @@ import torch
 from sklearn.cluster import DBSCAN
 import time
 import streamlit as st
+from streamlit_drawable_canvas import st_canvas
 from streamlit_cropper import st_cropper
 from streamlit_img_label import st_img_label
 from streamlit_img_label.manage import ImageManager, ImageDirManager
@@ -105,6 +106,13 @@ def upload_page_fixed():
     if 'editable_df' not in st.session_state:
         st.session_state['editable_df'] = pd.DataFrame()
 
+    if 'color_to_label' not in st.session_state:
+        st.session_state['color_to_label'] = {}
+
+    if 'selected_label' not in st.session_state:
+        st.session_state['selected_label'] = "row"
+
+
     DET_ARCHS = ["db_resnet50"]
     RECO_ARCHS = ["parseq"]
     forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -162,6 +170,7 @@ def upload_page_fixed():
         # Define the full path for the new file
         save_path = os.path.join(target_folder, uploaded_file.name)
         orig_img.save(save_path)
+        st.session_state['orig_image'] = orig_img
 
         width, height = orig_img.size
         border_pixels = 25
@@ -213,21 +222,8 @@ def upload_page_fixed():
             # This step takes the processed information (words and their locations) and maps them into a structured format, 
             # creating a pandas DataFrame. Each cell in the DataFrame corresponds to a cell in the table image, 
             # filled with the extracted text.
-            #df_from_table_transformer  = processor.map_values_to_dataframe()
+            df_from_table_transformer  = processor.map_values_to_dataframe()
             
-            # Assuming you have already run extract_and_map_words
-            data = processor.value_boxes_absolute
-
-            # You need to determine suitable values for eps_x and eps_y
-            eps_x = 0.05  # Example value, adjust as needed
-            eps_y = 0.05  # Example value, adjust as needed
-
-            # Now call create_table with all required arguments
-            df_from_table_transformer = processor.create_table(data, eps_x, eps_y)
-
-            
-            #df_from_table_transformer  = processor.create_table()
-
             #df = df.reset_index(drop=True).copy()
             #name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]
             #col_list = df.columns.tolist()
@@ -243,9 +239,27 @@ def upload_page_fixed():
             #     df["match_number_day"] = range(1, len(df) + 1)
 
 
+            label = st.selectbox(
+                "Select Label:",
+                ["row", "column"],
+                key='label',
+            )
+
+            # Update the session state based on the label selection
+            st.session_state['selected_label'] = label
+
+            # Set the fill color based on the updated session state
+            fill_color = "rgba(255, 255, 0, 0.3)" if st.session_state['selected_label'] == "column" else "rgba(255, 0, 0, 0.3)"
+
+            # Drawing mode selection
+            mode = "transform" if st.checkbox("Move ROIs", False) else "rect"
+
+            # Update the session state based on the label selection
+            st.session_state['mode'] = mode
+            
             # Wrap table editing and submission button in a form
             with st.form("edit_table_form"):
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
 
                 if cropped_img:
                     img_width, img_height = cropped_img.size
@@ -268,13 +282,27 @@ def upload_page_fixed():
                     submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
 
                 with col2:
-                    st.write("Cropped Image")
-                    st.image(cropped_img, use_column_width=True)
 
-                with col3:
-                    st.write("Table transformer + Text recognition visualized:")
-                    boxes_fig = processor.plot_boxes()
-                    st.pyplot(boxes_fig, use_container_width=True)
+                    st.write("Cropped Image")
+
+                    orig_img = st.session_state['orig_image']
+                    width, height = orig_img.size
+
+                    # Canvas for annotation
+                    canvas_result = st_canvas(
+                        fill_color=fill_color,
+                        stroke_width=0.5,
+                        background_image=orig_img,
+                        height=height,
+                        width=width,
+                        drawing_mode=st.session_state['mode'],
+                        key="color_annotation_app",
+                    )
+
+                # with col3:
+                #     st.write("Table transformer + Text recognition visualized:")
+                #     boxes_fig = processor.plot_boxes()
+                #     st.pyplot(boxes_fig, use_container_width=True)
 
             if submit_edits_button:
                 processor.save_corrected_data_for_retraining(edited_df)
@@ -285,9 +313,24 @@ def upload_page_fixed():
                 # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
                 # db.update_csv_file() # Update CSV file with current DB data
 
-                st.write("Table Saved Successfully!")
-                st.session_state['step'] = 'upload'
-                st.experimental_rerun()  # Force a rerun to update the page immediately
+                if canvas_result.json_data is not None:
+                    df = pd.json_normalize(canvas_result.json_data["objects"])
+                    if len(df) == 0:
+                        st.warning("No annotations available.")
+                    else:
+                        # Update color to label mapping here
+                        st.session_state['color_to_label'][fill_color] = st.session_state['selected_label']
+                        df["label"] = df["fill"].map(st.session_state["color_to_label"])
+
+                        # Display the annotated table
+                        st.dataframe(df[["top", "left", "width", "height", "label"]])
+                        st.write(canvas_result.json_data["objects"])
+
+
+
+                #st.write("Table Saved Successfully!")
+                #st.session_state['step'] = 'upload'
+                #st.experimental_rerun()  # Force a rerun to update the page immediately
 
 
 def enter_table_manually():
