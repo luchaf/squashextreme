@@ -8,12 +8,6 @@ import tempfile
 from collections import defaultdict
 import pandas as pd
 from PIL import Image, ExifTags
-import cv2
-import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import numpy as np
-import torch
-import time
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 from match_results.match_results_utils import SquashMatchDatabase, TableImageProcessor
@@ -54,34 +48,36 @@ def correct_image_orientation(image):
     return image
 
 
-def upload_page_fixed():
+def initialize_session_state():
+    # Default values for the session state
+    default_values = {
+        'step': 'upload',
+        'editable_df': pd.DataFrame(),
+        'color_to_label': {},
+        'selected_label': "table",
+    }
 
-    # Initialize session state for tracking progress
-    if 'step' not in st.session_state:
-        st.session_state['step'] = 'upload'
-    if 'editable_df' not in st.session_state:
-        st.session_state['editable_df'] = pd.DataFrame()
+    # Set default values if they are not already set
+    for key, value in default_values.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
-    if 'color_to_label' not in st.session_state:
-        st.session_state['color_to_label'] = {}
-
-    if 'selected_label' not in st.session_state:
-        st.session_state['selected_label'] = "row"
-
+    # Handle dependent session state values
     if "current_script_path" not in st.session_state:
         st.session_state["current_script_path"] = os.path.dirname(__file__)
-        current_script_path = st.session_state["current_script_path"]
 
     if "parent_directory" not in st.session_state:
-        st.session_state["parent_directory"] = os.path.join(current_script_path, os.pardir)
-        parent_directory = st.session_state["parent_directory"]
+        st.session_state["parent_directory"] = os.path.join(st.session_state["current_script_path"], os.pardir)
 
     if "target_folder" not in st.session_state:
-        st.session_state["target_folder"] = os.path.normpath(os.path.join(parent_directory, 'table_structure_recognition/data/images'))
-        target_folder = st.session_state["target_folder"]
-        if not os.path.exists(target_folder):
-            os.makedirs(target_folder)
+        st.session_state["target_folder"] = os.path.normpath(os.path.join(st.session_state["parent_directory"], 'table_structure_recognition/data/images'))
+        if not os.path.exists(st.session_state["target_folder"]):
+            os.makedirs(st.session_state["target_folder"])
 
+
+def upload_page_fixed():
+
+    initialize_session_state()
 
     # First step: Uploading the image
     if st.session_state['step'] == 'upload':
@@ -97,8 +93,8 @@ def upload_page_fixed():
     # Second step: Cropping the image
     elif st.session_state['step'] == 'crop' and 'uploaded_file' in st.session_state:
         uploaded_file = st.session_state['uploaded_file']
+        
         file_name = uploaded_file.name
-
         file_extension = get_file_extension(uploaded_file.name)
         st.session_state['image_format'] = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())
         orig_img = Image.open(uploaded_file)
@@ -110,12 +106,12 @@ def upload_page_fixed():
         target_folder = st.session_state["target_folder"]
         save_path = os.path.join(target_folder, uploaded_file.name)
 
-        orig_img.save(save_path)
+        # orig_img.save(save_path)
         st.session_state['orig_image'] = orig_img
 
         width, height = orig_img.size
         
-        label = st.radio(
+        label = st.selectbox(
             "Select Label:",
             ["table", "row", "column"],
             key='label',
@@ -171,13 +167,14 @@ def upload_page_fixed():
             crop_button = st.form_submit_button('Crop Image')
 
         if crop_button:
-            df.to_parquet(os.path.join(target_folder, "okok.parquet"))
-            crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
-            cropped_img = orig_img.crop(crop_area)
+            with st.spinner("yoyoyoyoyoyoyo"):
+                df.to_parquet(os.path.join(target_folder, "okok.parquet"))
+                crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
+                cropped_img = orig_img.crop(crop_area)
 
-            st.image(cropped_img, caption='Cropped Image', use_column_width=True)
-            st.session_state['cropped_img'] = cropped_img
-            st.session_state['step'] = 'process'
+                #st.image(cropped_img, caption='Cropped Image', use_column_width=True)
+                st.session_state['cropped_img'] = cropped_img
+                st.session_state['step'] = 'process'
             st.experimental_rerun()  # Force a rerun to update the page immediately
 
     # Third step: Process and display the cropped image and table

@@ -32,20 +32,6 @@ We're on it, with charts, graphs, and narratives that are almost obsessively gra
 if st.button("Dive into the pointless overanalysis oasis"):
     st.switch_page("pages/2_Pointless_Overanalysis_Oasis.py")
 
-# Section 3
-st.subheader("3. Chat with the SquashBot")
-st.write("""
-But what if there's a question the provided stats didn't quite answer? Or perhaps you can't be bothered to sieve through the barrage of data. 
-Enter our Squash Bot—a conversational maestro ready to fetch the answers. 
-Whether it's an insight from last week's match or a curiosity about your overall performance against left-handed players, the bot's got your back. 
-After all, it's 2024 and sifting through stats manually is so last decade.
-""")
-
-# Section 4
-st.subheader("4. Label some tables")
-st.write("""
-...
-""")
 
 # Footer
 st.write("""
