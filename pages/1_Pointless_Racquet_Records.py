@@ -230,6 +230,9 @@ def upload_page_fixed():
                 # Display the annotated table
                 st.dataframe(df[["top", "left", "width", "height", "label"]])
                 
+                numerical_columns = ["top", "left", "width", "height"]
+                df[numerical_columns] = df[numerical_columns].multiply(4)
+
                 df_table = df[df["label"]=="table"].copy()
                 df_table = df_table[["top", "left", "height", "width"]].copy()
                 st.dataframe(df_table)
@@ -294,33 +297,10 @@ def upload_page_fixed():
             # if "match_number_day" not in df.columns:
             #     df["match_number_day"] = range(1, len(df) + 1)
 
-
-            label = st.radio(
-                "Select Label:",
-                ["table", "row", "column"],
-                key='label',
-            )
-
-            # Update the session state based on the label selection
-            st.session_state['selected_label'] = label
-
-            # Set the fill color based on the updated session state
-            if st.session_state['selected_label'] == "column":
-                fill_color = "rgba(255, 255, 0, 0.3)"  # Yellow for columns
-            elif st.session_state['selected_label'] == "row":
-                fill_color = "rgba(255, 0, 0, 0.3)"  # Red for rows
-            elif st.session_state['selected_label'] == "table":
-                fill_color = "rgba(255, 192, 203, 0.6)"  # Green for table
-
-            # Drawing mode selection
-            mode = "transform" if st.checkbox("Move ROIs", False) else "rect"
-
-            # Update the session state based on the label selection
-            st.session_state['mode'] = mode
             
             # Wrap table editing and submission button in a form
             with st.form("edit_table_form"):
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
 
                 if cropped_img:
                     img_width, img_height = cropped_img.size
@@ -343,37 +323,15 @@ def upload_page_fixed():
                     submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
 
                 with col2:
-
                     st.write("Cropped Image")
+                    st.image(cropped_img, use_column_width=True)
 
-                    orig_img = st.session_state['orig_image']
-                    width, height = orig_img.size
-
-                    # Canvas for annotation
-                    canvas_result = st_canvas(
-                        fill_color=fill_color,
-                        stroke_width=0.5,
-                        background_image=orig_img,
-                        height=height/5,
-                        width=width/5,
-                        drawing_mode=st.session_state['mode'],
-                        key="color_annotation_app",
-                    )
-
-                # with col3:
-                #     st.write("Table transformer + Text recognition visualized:")
-                #     boxes_fig = processor.plot_boxes()
-                #     st.pyplot(boxes_fig, use_container_width=True)
+                with col3:
+                    st.write("Table transformer + Text recognition visualized:")
+                    boxes_fig = processor.plot_boxes()
+                    st.pyplot(boxes_fig, use_container_width=True)
 
             if submit_edits_button:
-                current_script_path = st.session_state["current_script_path"]
-                parent_directory = st.session_state["parent_directory"]
-                target_folder = st.session_state["target_folder"]
-                save_path = os.path.join(target_folder, uploaded_file.name)
-                orig_img = st.session_state['orig_image']
-                orig_img.save(save_path)
-
-
                 processor.save_corrected_data_for_retraining(edited_df)
                 edited_df["date"] = match_day_date
                 edited_df["match_number_day"] = range(1, len(edited_df) + 1)
@@ -381,22 +339,6 @@ def upload_page_fixed():
                 # db = SquashMatchDatabase()
                 # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
                 # db.update_csv_file() # Update CSV file with current DB data
-
-                if canvas_result.json_data is not None:
-                    df = pd.json_normalize(canvas_result.json_data["objects"])
-                    if len(df) == 0:
-                        st.warning("No annotations available.")
-                    else:
-                        # Update color to label mapping here
-                        st.session_state['color_to_label'][fill_color] = st.session_state['selected_label']
-                        df["label"] = df["fill"].map(st.session_state["color_to_label"])
-
-                        # Display the annotated table
-                        st.dataframe(df[["top", "left", "width", "height", "label"]])
-                        st.write(canvas_result.json_data["objects"])
-
-                        df.to_parquet(os.path.join(target_folder, "okok.parquet"))
-
 
                 #st.write("Table Saved Successfully!")
                 #st.session_state['step'] = 'upload'
