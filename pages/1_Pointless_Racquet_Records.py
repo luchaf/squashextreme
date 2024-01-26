@@ -3,16 +3,6 @@
 # This program is licensed under the Apache License version 2.
 # See LICENSE or go to <https://www.apache.org/licenses/LICENSE-2.0.txt> for full license details.
 
-# import streamlit as st
-# import sys
-# sys.path.append('/teamspace/studios/this_studio/squashextreme')
-
-# st.write(sys.path)
-
-# import os
-# st.write(os.getcwd())
-
-import io
 import os
 import tempfile
 from collections import defaultdict
@@ -22,84 +12,21 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
-from doctr.io import DocumentFile
-from doctr.models.predictor import OCRPredictor
-from doctr.models import ocr_predictor, db_resnet50, parseq
 import torch
-from sklearn.cluster import DBSCAN
 import time
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
-from streamlit_cropper import st_cropper
-from streamlit_img_label import st_img_label
-from streamlit_img_label.manage import ImageManager, ImageDirManager
 from match_results.match_results_utils import SquashMatchDatabase, TableImageProcessor
 from datetime import datetime, date
-from pointless_utils import correct_names_in_dataframe
+from doctr.io import DocumentFile
+from doctr.models.predictor import OCRPredictor
+from doctr.models import ocr_predictor, db_resnet50, parseq
 
 # Set the page to wide mode
 st.set_page_config(layout="wide")
 
 
-def load_predictor(
-    det_arch: str,
-    reco_arch: str,
-    assume_straight_pages: bool,
-    straighten_pages: bool,
-    bin_thresh: float,
-    device: torch.device,
-) -> OCRPredictor:
-    """Load a predictor from doctr.models
-
-    Args:
-    ----
-        det_arch: detection architecture
-        reco_arch: recognition architecture
-        assume_straight_pages: whether to assume straight pages or not
-        straighten_pages: whether to straighten rotated pages or not
-        bin_thresh: binarization threshold for the segmentation map
-        device: torch.device, the device to load the predictor on
-
-    Returns:
-    -------
-        instance of OCRPredictor
-    """
-    predictor = ocr_predictor(
-        det_arch,
-        reco_arch,
-        pretrained=True,
-        assume_straight_pages=assume_straight_pages,
-        straighten_pages=straighten_pages,
-        export_as_straight_boxes=straighten_pages,
-        detect_orientation=not assume_straight_pages,
-    ).to(device)
-    predictor.det_predictor.model.postprocessor.bin_thresh = bin_thresh
-    return predictor
-
-
-def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.device) -> np.ndarray:
-    """Forward an image through the predictor
-
-    Args:
-    ----
-        predictor: instance of OCRPredictor
-        image: image to process
-        device: torch.device, the device to process the image on
-
-    Returns:
-    -------
-        segmentation map
-    """
-    with torch.no_grad():
-        processed_batches = predictor.det_predictor.pre_processor([image])
-        out = predictor.det_predictor.model(processed_batches[0].to(device), return_model_output=True)
-        seg_map = out["out_map"].to("cpu").numpy()
-
-    return seg_map
-
-
 def upload_page_fixed():
-
 
     # Initialize session state for tracking progress
     if 'step' not in st.session_state:
@@ -127,10 +54,6 @@ def upload_page_fixed():
         if not os.path.exists(target_folder):
             os.makedirs(target_folder)
 
-
-    DET_ARCHS = ["db_resnet50"]
-    RECO_ARCHS = ["parseq"]
-    forward_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # First step: Uploading the image
     if st.session_state['step'] == 'upload':
@@ -283,21 +206,6 @@ def upload_page_fixed():
             # filled with the extracted text.
             df_from_table_transformer  = processor.map_values_to_dataframe()
             
-            #df = df.reset_index(drop=True).copy()
-            #name_list = ['Simon', 'Friede', 'Lucas', 'Tobias', 'Peter', "Player1", "Player2", "Score1", "Score2"]
-            #col_list = df.columns.tolist()
-            #df = correct_names_in_dataframe(df, col_list, name_list)
-            
-            # Set the first row as the header
-            # df.columns = df.iloc[0]
-            # # Drop the first row
-            # df = df.drop(df.index[0])             
-            # if "date" not in df.columns:
-            #     df["date"] = datetime.now().strftime("%Y%m%d")
-            # if "match_number_day" not in df.columns:
-            #     df["match_number_day"] = range(1, len(df) + 1)
-
-            
             # Wrap table editing and submission button in a form
             with st.form("edit_table_form"):
                 col1, col2, col3 = st.columns(3)
@@ -333,16 +241,24 @@ def upload_page_fixed():
 
             if submit_edits_button:
                 processor.save_corrected_data_for_retraining(edited_df)
+                
+                # Set the first row as the header
+                edited_df.columns = edited_df.iloc[0]
+                # Drop the first row
+                edited_df = edited_df.drop(edited_df.index[0])           
+
                 edited_df["date"] = match_day_date
                 edited_df["match_number_day"] = range(1, len(edited_df) + 1)
+
+                st.dataframe(edited_df)
 
                 # db = SquashMatchDatabase()
                 # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
                 # db.update_csv_file() # Update CSV file with current DB data
 
-                #st.write("Table Saved Successfully!")
-                #st.session_state['step'] = 'upload'
-                #st.experimental_rerun()  # Force a rerun to update the page immediately
+                st.write("Table Saved Successfully!")
+                st.session_state['step'] = 'upload'
+                st.experimental_rerun()  # Force a rerun to update the page immediately
 
 
 def enter_table_manually():
@@ -398,9 +314,9 @@ def enter_table_manually():
     if submit_edits_button:
         edited_df["date"] = match_day_date
         edited_df["match_number_day"] = range(1, len(edited_df) + 1)
-        # db = SquashMatchDatabase()
-        # db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
-        # db.update_csv_file() # Update CSV file with current DB data                            
+        db = SquashMatchDatabase()
+        db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
+        db.update_csv_file() # Update CSV file with current DB data                            
         st.write("Table Saved Successfully!")
 
 
@@ -422,4 +338,3 @@ selected_function = tab_functions[tab_index]
 
 # Execute the selected function
 selected_function()
-# # pip install pascal_voc_writer
