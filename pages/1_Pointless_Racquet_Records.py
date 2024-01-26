@@ -25,6 +25,34 @@ from doctr.models import ocr_predictor, db_resnet50, parseq
 # Set the page to wide mode
 st.set_page_config(layout="wide")
 
+# Constants file
+EXTENSION_TO_FORMAT = {
+    'jpg': 'JPEG',
+    'jpeg': 'JPEG',
+    'png': 'PNG',
+    'pdf': 'PDF'
+}
+
+# Utility Functions
+def get_file_extension(filename):
+    return os.path.splitext(filename)[1].lstrip('.').lower()
+
+def correct_image_orientation(image):
+    for orientation in ExifTags.TAGS.keys():
+        if ExifTags.TAGS[orientation] == 'Orientation':
+            break
+    exif = image._getexif()
+    if exif:
+        exif = dict(exif.items())
+        orientation = exif.get(orientation)
+        if orientation == 3:
+            return image.rotate(180, expand=True)
+        elif orientation == 6:
+            return image.rotate(270, expand=True)
+        elif orientation == 8:
+            return image.rotate(90, expand=True)
+    return image
+
 
 def upload_page_fixed():
 
@@ -71,32 +99,10 @@ def upload_page_fixed():
         uploaded_file = st.session_state['uploaded_file']
         file_name = uploaded_file.name
 
-        # Map file extensions to PIL format strings
-        EXTENSION_TO_FORMAT = {
-            'jpg': 'JPEG',
-            'jpeg': 'JPEG',
-            'png': 'PNG',
-            'pdf': 'PDF'
-        }
-
-        file_extension = os.path.splitext(uploaded_file.name)[1].lstrip('.').lower()
+        file_extension = get_file_extension(uploaded_file.name)
         st.session_state['image_format'] = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())
-
         orig_img = Image.open(uploaded_file)
-        # Check and correct the orientation if needed
-        for orientation in ExifTags.TAGS.keys():
-            if ExifTags.TAGS[orientation] == 'Orientation':
-                break
-        exif = orig_img._getexif()
-        if exif:
-            exif = dict(exif.items())
-            orientation = exif.get(orientation)
-            if orientation == 3:
-                orig_img = orig_img.rotate(180, expand=True)
-            elif orientation == 6:
-                orig_img = orig_img.rotate(270, expand=True)
-            elif orientation == 8:
-                orig_img = orig_img.rotate(90, expand=True)
+        orig_img = correct_image_orientation(orig_img)
 
         # Define the path for the folder one level above the current script
         current_script_path = st.session_state["current_script_path"]
