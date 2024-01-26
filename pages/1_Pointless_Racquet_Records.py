@@ -100,6 +100,7 @@ def forward_image(predictor: OCRPredictor, image: np.ndarray, device: torch.devi
 
 def upload_page_fixed():
 
+
     # Initialize session state for tracking progress
     if 'step' not in st.session_state:
         st.session_state['step'] = 'upload'
@@ -111,6 +112,20 @@ def upload_page_fixed():
 
     if 'selected_label' not in st.session_state:
         st.session_state['selected_label'] = "row"
+
+    if "current_script_path" not in st.session_state:
+        st.session_state["current_script_path"] = os.path.dirname(__file__)
+        current_script_path = st.session_state["current_script_path"]
+
+    if "parent_directory" not in st.session_state:
+        st.session_state["parent_directory"] = os.path.join(current_script_path, os.pardir)
+        parent_directory = st.session_state["parent_directory"]
+
+    if "target_folder" not in st.session_state:
+        st.session_state["target_folder"] = os.path.normpath(os.path.join(parent_directory, 'table_structure_recognition/data/images'))
+        target_folder = st.session_state["target_folder"]
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
 
 
     DET_ARCHS = ["db_resnet50"]
@@ -161,25 +176,70 @@ def upload_page_fixed():
                 orig_img = orig_img.rotate(90, expand=True)
 
         # Define the path for the folder one level above the current script
-        current_script_path = os.path.dirname(__file__)
-        parent_directory = os.path.join(current_script_path, os.pardir)
-        target_folder = os.path.normpath(os.path.join(parent_directory, 'table_structure_recognition/data/images'))
-        # Make sure the target directory exists, if not, create it
-        if not os.path.exists(target_folder):
-            os.makedirs(target_folder)
-        # Define the full path for the new file
+        current_script_path = st.session_state["current_script_path"]
+        parent_directory = st.session_state["parent_directory"]
+        target_folder = st.session_state["target_folder"]
         save_path = os.path.join(target_folder, uploaded_file.name)
+
         orig_img.save(save_path)
         st.session_state['orig_image'] = orig_img
 
         width, height = orig_img.size
-        border_pixels = 25
-        cropped_img_dims = st_cropper(orig_img, realtime_update=True, box_color='#0000FF', return_type="box", aspect_ratio=None, default_coords=(border_pixels, width - border_pixels, border_pixels, height - border_pixels))
+        
+        label = st.radio(
+            "Select Label:",
+            ["table", "row", "column"],
+            key='label',
+        )
+
+        cropped_img_dims = {"top":0,"left":0,"height":height,"width":width}
+        # Update the session state based on the label selection
+        st.session_state['selected_label'] = label
+
+        # Set the fill color based on the updated session state
+        if st.session_state['selected_label'] == "column":
+            fill_color = "rgba(255, 255, 0, 0.3)"  # Yellow for columns
+        elif st.session_state['selected_label'] == "row":
+            fill_color = "rgba(255, 0, 0, 0.3)"  # Red for rows
+        elif st.session_state['selected_label'] == "table":
+            fill_color = "rgba(255, 192, 203, 0.6)"  # Green for table
+
+        # Drawing mode selection
+        mode = "transform" if st.checkbox("Move ROIs", False) else "rect"
+        # Update the session state based on the label selection
+        st.session_state['mode'] = mode
+        # Canvas for annotation
+        canvas_result = st_canvas(
+            fill_color=fill_color,
+            stroke_width=0.5,
+            background_image=orig_img,
+            height=height/4,
+            width=width/4,
+            drawing_mode=st.session_state['mode'],
+            key="color_annotation_app",
+        )
+        if canvas_result.json_data is not None:
+            df = pd.json_normalize(canvas_result.json_data["objects"])
+            if len(df) == 0:
+                st.warning("No annotations available.")
+            else:
+                # Update color to label mapping here
+                st.session_state['color_to_label'][fill_color] = st.session_state['selected_label']
+                df["label"] = df["fill"].map(st.session_state["color_to_label"])
+
+                # Display the annotated table
+                st.dataframe(df[["top", "left", "width", "height", "label"]])
+                
+                df_table = df[df["label"]=="table"].copy()
+                df_table = df_table[["top", "left", "height", "width"]].copy()
+                st.dataframe(df_table)
+                cropped_img_dims = df_table.to_dict(orient='records')[0]
 
         with st.form("crop_form"):
             crop_button = st.form_submit_button('Crop Image')
 
         if crop_button:
+            df.to_parquet(os.path.join(target_folder, "okok.parquet"))
             crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
             cropped_img = orig_img.crop(crop_area)
 
@@ -199,11 +259,7 @@ def upload_page_fixed():
                 cropped_img.save(tmp_file, format=image_format)
                 tmp_file_path = tmp_file.name
 
-            if uploaded_file.name.endswith(".pdf"):
-                doc = DocumentFile.from_pdf(tmp_file_path)
-            else:
-                doc = DocumentFile.from_images(tmp_file_path)
-
+            doc = DocumentFile.from_images(tmp_file_path)
             page = doc[0]
 
             # Create an instance of the TableImageProcessor class with the image located at tmp_file_path. 
@@ -239,9 +295,9 @@ def upload_page_fixed():
             #     df["match_number_day"] = range(1, len(df) + 1)
 
 
-            label = st.selectbox(
+            label = st.radio(
                 "Select Label:",
-                ["row", "column"],
+                ["table", "row", "column"],
                 key='label',
             )
 
@@ -249,7 +305,12 @@ def upload_page_fixed():
             st.session_state['selected_label'] = label
 
             # Set the fill color based on the updated session state
-            fill_color = "rgba(255, 255, 0, 0.3)" if st.session_state['selected_label'] == "column" else "rgba(255, 0, 0, 0.3)"
+            if st.session_state['selected_label'] == "column":
+                fill_color = "rgba(255, 255, 0, 0.3)"  # Yellow for columns
+            elif st.session_state['selected_label'] == "row":
+                fill_color = "rgba(255, 0, 0, 0.3)"  # Red for rows
+            elif st.session_state['selected_label'] == "table":
+                fill_color = "rgba(255, 192, 203, 0.6)"  # Green for table
 
             # Drawing mode selection
             mode = "transform" if st.checkbox("Move ROIs", False) else "rect"
@@ -276,7 +337,7 @@ def upload_page_fixed():
                     edited_df = st.data_editor(
                         df_from_table_transformer , 
                         num_rows="dynamic", 
-                        height=1400, 
+                        height=750, 
                         use_container_width=True)
                     # Submission button for the form
                     submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
@@ -293,8 +354,8 @@ def upload_page_fixed():
                         fill_color=fill_color,
                         stroke_width=0.5,
                         background_image=orig_img,
-                        height=height,
-                        width=width,
+                        height=height/5,
+                        width=width/5,
                         drawing_mode=st.session_state['mode'],
                         key="color_annotation_app",
                     )
@@ -305,6 +366,14 @@ def upload_page_fixed():
                 #     st.pyplot(boxes_fig, use_container_width=True)
 
             if submit_edits_button:
+                current_script_path = st.session_state["current_script_path"]
+                parent_directory = st.session_state["parent_directory"]
+                target_folder = st.session_state["target_folder"]
+                save_path = os.path.join(target_folder, uploaded_file.name)
+                orig_img = st.session_state['orig_image']
+                orig_img.save(save_path)
+
+
                 processor.save_corrected_data_for_retraining(edited_df)
                 edited_df["date"] = match_day_date
                 edited_df["match_number_day"] = range(1, len(edited_df) + 1)
@@ -326,6 +395,7 @@ def upload_page_fixed():
                         st.dataframe(df[["top", "left", "width", "height", "label"]])
                         st.write(canvas_result.json_data["objects"])
 
+                        df.to_parquet(os.path.join(target_folder, "okok.parquet"))
 
 
                 #st.write("Table Saved Successfully!")
