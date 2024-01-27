@@ -85,8 +85,6 @@ def crop_and_label_page():
     save_path = os.path.join(target_folder, uploaded_file.name)
     orig_img.save(save_path)
     
-    #st.session_state['orig_image'] = orig_img
-
     width, height = orig_img.size
     
     label = st.selectbox(
@@ -145,12 +143,11 @@ def crop_and_label_page():
         crop_button = st.form_submit_button('Crop Image')
 
     if crop_button:
-        with st.spinner("yoyoyoyoyoyoyo"):
-            df.to_parquet(os.path.join(target_folder, "okok.parquet"))
-            crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
-            cropped_img = orig_img.crop(crop_area)
-            st.session_state['cropped_img'] = cropped_img
-            st.session_state['step'] = 'process'
+        df.to_parquet(os.path.join(target_folder, "okok.parquet"))
+        crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
+        cropped_img = orig_img.crop(crop_area)
+        st.session_state['cropped_img'] = cropped_img
+        st.session_state['step'] = 'process'
         st.experimental_rerun()  # Force a rerun to update the page immediately
 
 
@@ -205,7 +202,7 @@ def process_page():
                 edited_df = st.data_editor(
                     df_from_table_transformer , 
                     num_rows="dynamic", 
-                    height=750, 
+                    height=700, 
                     use_container_width=True)
                 # Submission button for the form
                 submit_edits_button = st.form_submit_button('Confirm Edits and Save Table')
@@ -319,7 +316,8 @@ def main():
     elif st.session_state['step'] == 'crop':
         crop_and_label_page()
     elif st.session_state['step'] == 'process':
-        process_page()
+        with st.spinner("yoyoyoyoyoyoyo"):
+            process_page()
 
 if __name__ == "__main__":
     main()
