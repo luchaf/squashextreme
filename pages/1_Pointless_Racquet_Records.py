@@ -129,14 +129,14 @@ def crop_and_label_page():
             df["label"] = df["fill"].map(st.session_state["color_to_label"])
 
             # Display the annotated table
-            st.dataframe(df[["top", "left", "width", "height", "label"]])
+            #st.dataframe(df[["top", "left", "width", "height", "label"]])
             
             numerical_columns = ["top", "left", "width", "height"]
             df[numerical_columns] = df[numerical_columns].multiply(4)
 
             df_table = df[df["label"]=="table"].copy()
             df_table = df_table[["top", "left", "height", "width"]].copy()
-            st.dataframe(df_table)
+            #st.dataframe(df_table)
             cropped_img_dims = df_table.to_dict(orient='records')[0]
 
     with st.form("crop_form"):
