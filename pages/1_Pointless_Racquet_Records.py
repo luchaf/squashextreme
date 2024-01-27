@@ -144,7 +144,12 @@ def crop_and_label_page():
 
     if crop_button:
         df.to_parquet(os.path.join(target_folder, "okok.parquet"))
-        crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
+        crop_area = (
+            cropped_img_dims["left"], 
+            cropped_img_dims["top"], 
+            cropped_img_dims["left"] + cropped_img_dims["width"], 
+            cropped_img_dims["top"] + cropped_img_dims["height"]
+            )
         cropped_img = orig_img.crop(crop_area)
         st.session_state['cropped_img'] = cropped_img
         st.session_state['step'] = 'process'
