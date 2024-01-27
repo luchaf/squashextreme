@@ -68,7 +68,7 @@ def upload_page():
         st.session_state['step'] = 'crop'
         st.experimental_rerun()  # Force a rerun to update the page immediately
 
-def crop_page():
+def crop_and_label_page():
     """Handles the logic for the image cropping page."""
     uploaded_file = st.session_state['uploaded_file']
     
@@ -83,9 +83,9 @@ def crop_page():
     parent_directory = st.session_state["parent_directory"]
     target_folder = st.session_state["target_folder"]
     save_path = os.path.join(target_folder, uploaded_file.name)
-
-    # orig_img.save(save_path)
-    st.session_state['orig_image'] = orig_img
+    orig_img.save(save_path)
+    
+    #st.session_state['orig_image'] = orig_img
 
     width, height = orig_img.size
     
@@ -149,8 +149,6 @@ def crop_page():
             df.to_parquet(os.path.join(target_folder, "okok.parquet"))
             crop_area = (cropped_img_dims["left"], cropped_img_dims["top"], cropped_img_dims["left"] + cropped_img_dims["width"], cropped_img_dims["top"] + cropped_img_dims["height"])
             cropped_img = orig_img.crop(crop_area)
-
-            #st.image(cropped_img, caption='Cropped Image', use_column_width=True)
             st.session_state['cropped_img'] = cropped_img
             st.session_state['step'] = 'process'
         st.experimental_rerun()  # Force a rerun to update the page immediately
@@ -299,7 +297,7 @@ def enter_table_manually():
         db.insert_df_into_db(edited_df) # Insert a Pandas DataFrame
         db.update_csv_file() # Update CSV file with current DB data                            
         st.write("Table Saved Successfully!")
-        
+
 
 # Main Application Logic
 def main():
@@ -319,7 +317,7 @@ def main():
     if st.session_state['step'] == 'upload':
         selected_function()
     elif st.session_state['step'] == 'crop':
-        crop_page()
+        crop_and_label_page()
     elif st.session_state['step'] == 'process':
         process_page()
 
