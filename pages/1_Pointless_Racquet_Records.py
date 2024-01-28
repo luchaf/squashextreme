@@ -89,7 +89,7 @@ def crop_and_label_page():
     
     label = st.selectbox(
         "Select Label:",
-        ["table row", "table column", "table"],
+        ["table", "table row", "table column"],
         key='label',
     )
 
@@ -98,9 +98,9 @@ def crop_and_label_page():
     st.session_state['selected_label'] = label
 
     # Set the fill color based on the updated session state
-    if st.session_state['selected_label'] == "column":
+    if st.session_state['selected_label'] == "table column":
         fill_color = "rgba(255, 255, 0, 0.3)"  # Yellow for columns
-    elif st.session_state['selected_label'] == "row":
+    elif st.session_state['selected_label'] == "table row":
         fill_color = "rgba(255, 0, 0, 0.3)"  # Red for rows
     elif st.session_state['selected_label'] == "table":
         fill_color = "rgba(255, 192, 203, 0.6)"  # Green for table
@@ -155,7 +155,7 @@ def crop_and_label_page():
         df.to_parquet(os.path.join(target_folder, f"{file_name}.parquet"))
 
         # Convert labels to unique categories with IDs
-        unique_labels = ["table row", "table column", "table"]
+        unique_labels = ["table", "table row", "table column"]
         categories = [{"supercategory": "none", "id": i+1, "name": label} for i, label in enumerate(unique_labels)]
         label_to_id = {label: i+1 for i, label in enumerate(unique_labels)}
 
