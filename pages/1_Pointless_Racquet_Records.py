@@ -71,9 +71,8 @@ def upload_page():
 def crop_and_label_page():
     """Handles the logic for the image cropping page."""
     uploaded_file = st.session_state['uploaded_file']
-    
     file_name = uploaded_file.name
-    file_extension = get_file_extension(uploaded_file.name)
+    file_extension = get_file_extension(file_name)
     st.session_state['image_format'] = EXTENSION_TO_FORMAT.get(file_extension, file_extension.upper())
     orig_img = Image.open(uploaded_file)
     orig_img = correct_image_orientation(orig_img)
@@ -82,7 +81,7 @@ def crop_and_label_page():
     current_script_path = st.session_state["current_script_path"]
     parent_directory = st.session_state["parent_directory"]
     target_folder = st.session_state["target_folder"]
-    save_path = os.path.join(target_folder, uploaded_file.name)
+    save_path = os.path.join(target_folder, file_name)
     orig_img.save(save_path)
     
     width, height = orig_img.size
@@ -109,13 +108,17 @@ def crop_and_label_page():
     mode = "transform" if st.checkbox("Move ROIs", False) else "rect"
     # Update the session state based on the label selection
     st.session_state['mode'] = mode
+    
+    # image crop factor in order to see the whole picture
+    image_crop_factor = 4
+    
     # Canvas for annotation
     canvas_result = st_canvas(
         fill_color=fill_color,
         stroke_width=0.5,
         background_image=orig_img,
-        height=height/4,
-        width=width/4,
+        height=height/image_crop_factor,
+        width=width/image_crop_factor,
         drawing_mode=st.session_state['mode'],
         key="color_annotation_app",
     )
@@ -132,7 +135,7 @@ def crop_and_label_page():
             #st.dataframe(df[["top", "left", "width", "height", "label"]])
             
             numerical_columns = ["top", "left", "width", "height"]
-            df[numerical_columns] = df[numerical_columns].multiply(4)
+            df[numerical_columns] = df[numerical_columns].multiply(image_crop_factor)
 
             df_table = df[df["label"]=="table"].copy()
             df_table = df_table[["top", "left", "height", "width"]].copy()
@@ -143,7 +146,7 @@ def crop_and_label_page():
         crop_button = st.form_submit_button('Crop Image')
 
     if crop_button:
-        df.to_parquet(os.path.join(target_folder, "okok.parquet"))
+        df.to_parquet(os.path.join(target_folder, f"{file_name}.parquet"))
         crop_area = (
             cropped_img_dims["left"], 
             cropped_img_dims["top"], 
