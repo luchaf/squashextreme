@@ -1,4 +1,5 @@
 import os
+import json
 import tempfile
 import pandas as pd
 from PIL import Image, ExifTags
@@ -88,7 +89,7 @@ def crop_and_label_page():
     
     label = st.selectbox(
         "Select Label:",
-        ["table", "row", "column"],
+        ["table row", "table column", "table"],
         key='label',
     )
 
@@ -152,6 +153,68 @@ def crop_and_label_page():
 
     if crop_button:
         df.to_parquet(os.path.join(target_folder, f"{file_name}.parquet"))
+
+        # Convert labels to unique categories with IDs
+        unique_labels = ["table row", "table column", "table"]
+        categories = [{"supercategory": "none", "id": i+1, "name": label} for i, label in enumerate(unique_labels)]
+        label_to_id = {label: i+1 for i, label in enumerate(unique_labels)}
+
+        # Construct the images data
+        unique_images = df.drop_duplicates(subset=['id'])
+        images = unique_images.apply(lambda row: {
+            "file_name": row['file_name'],
+            "height": row['height_img'],
+            "width": row['width_img'],
+            "id": row['id']
+        }, axis=1).tolist()
+
+        # Construct annotations
+        annotations = []
+        for i, row in df.iterrows():
+            annotation = {
+                "area": row['width'] * row['height'],
+                "iscrowd": 0,
+                "bbox": [row['left'], row['top'], row['width'], row['height']],
+                "category_id": label_to_id[row['label']],
+                "ignore": 0,
+                "segmentation": [],
+                "image_id": row['id'],
+                "id": i + 1
+            }
+            annotations.append(annotation)
+
+        # Construct the final JSON structure
+        coco_format = {
+            "images": images,
+            "type": "instances",
+            "annotations": annotations,
+            "categories": categories
+        }
+
+        # Convert to JSON
+        coco_json = json.dumps(coco_format, indent=4)
+
+        # Save to file
+        with open(os.path.join(target_folder, f"{file_name}_output.json"), 'w') as f:
+            f.write(coco_json)
+
+        # Print the JSON structure (for demonstration)
+        st.write(coco_json)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         crop_area = (
             cropped_img_dims["left"], 
             cropped_img_dims["top"], 
