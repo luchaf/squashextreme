@@ -152,7 +152,8 @@ def crop_and_label_page():
         crop_button = st.form_submit_button('Crop Image')
 
     if crop_button:
-        df.to_parquet(os.path.join(target_folder, f"{file_name}.parquet"))
+        id_name = file_name.split("_")[1].split(".")[0]
+        #df.to_parquet(os.path.join(target_folder, f"{id_name}.parquet"))
 
         # Convert labels to unique categories with IDs
         unique_labels = ["table", "table row", "table column"]
@@ -195,7 +196,7 @@ def crop_and_label_page():
         coco_json = json.dumps(coco_format, indent=4)
 
         # Save to file
-        with open(os.path.join(target_folder, f"{file_name}_output.json"), 'w') as f:
+        with open(os.path.join(target_folder, f"{id_name}_output.json"), 'w') as f:
             f.write(coco_json)
 
         # Print the JSON structure (for demonstration)

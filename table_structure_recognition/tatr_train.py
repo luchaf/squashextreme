@@ -14,13 +14,13 @@ from pytorch_lightning.callbacks import ModelCheckpoint
         
 class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, processor, train=True):
-        ann_file = os.path.join(img_folder, "custom_train.json" if train else "custom_val.json")
+        ann_file = os.path.join(img_folder, "train.json" if train else "val.json")
         super(CocoDetection, self).__init__(img_folder, ann_file)
         self.processor = processor
 
-    def __getitem__(self, idx):
-        # read in PIL image and target in COCO format
-        # feel free to add data augmentation here before passing them to the next step
+    def __getitem__(self, idx):       
+        # # read in PIL image and target in COCO format
+        # # feel free to add data augmentation here before passing them to the next step
         img, target = super(CocoDetection, self).__getitem__(idx)
 
         # preprocess image and target (converting target to DETR format, resizing + normalization of both image and target)
@@ -113,8 +113,8 @@ class Detr(pl.LightningModule):
         return val_dataloader
 
 processor = DetrImageProcessor()
-train_dataset = CocoDetection(img_folder='pointless/squashextreme/data/images', processor=processor)
-val_dataset = CocoDetection(img_folder='pointless/squashextreme/data/images', processor=processor, train=False)
+train_dataset = CocoDetection(img_folder='data/images/train', processor=processor)
+val_dataset = CocoDetection(img_folder='data/images/val', processor=processor, train=False)
 
 print("Number of training examples:", len(train_dataset))
 print("Number of validation examples:", len(val_dataset))

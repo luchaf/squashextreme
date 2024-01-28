@@ -32,3 +32,4 @@ streamlit-drawable-canvas
 streamlit-cropper
 streamlit-img-label
 pascal_voc_writer
+pycocotools
