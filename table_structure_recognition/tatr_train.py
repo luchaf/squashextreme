@@ -10,12 +10,31 @@ import pytorch_lightning as pl
 from transformers import DetrForObjectDetection, TableTransformerForObjectDetection
 import torch
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.callbacks import ModelCheckpoint, Callback
 import wandb  # Import W&B
 from pytorch_lightning.loggers import WandbLogger  # Import the WandbLogger
 
 wandb.init(project="table_transformer")
 
+class TransformersCheckpointCallback(Callback):
+    def __init__(self, save_path, monitor='validation_loss', mode='min'):
+        self.save_path = save_path
+        self.monitor = monitor
+        self.mode = mode
+        self.best_score = None
+
+    def on_validation_end(self, trainer, pl_module):
+        # Get the metric value
+        current_score = trainer.callback_metrics.get(self.monitor)
+
+        if current_score is None:
+            return
+
+        # Check if this is the best score
+        if self.best_score is None or (self.mode == 'min' and current_score < self.best_score) or (self.mode == 'max' and current_score > self.best_score):
+            self.best_score = current_score
+            # Save the model using save_pretrained
+            pl_module.model.save_pretrained(self.save_path)
         
 class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, processor, train=True):
@@ -55,6 +74,7 @@ class Detr(pl.LightningModule):
          # for the convolutional backbone
          self.model = TableTransformerForObjectDetection.from_pretrained(
       "microsoft/table-transformer-structure-recognition",
+      #"luchaf/testest2",
       ignore_mismatched_sizes=True,
   )
 
@@ -118,8 +138,8 @@ class Detr(pl.LightningModule):
         return val_dataloader
 
 processor = DetrImageProcessor()
-train_dataset = CocoDetection(img_folder='data/images/train', processor=processor)
-val_dataset = CocoDetection(img_folder='data/images/val', processor=processor, train=False)
+train_dataset = CocoDetection(img_folder='data/images/table_structure_recognition_modeling_data/train', processor=processor)
+val_dataset = CocoDetection(img_folder='data/images/table_structure_recognition_modeling_data/val', processor=processor, train=False)
 
 print("Number of training examples:", len(train_dataset))
 print("Number of validation examples:", len(val_dataset))
@@ -134,35 +154,20 @@ model = Detr(lr=1e-4, lr_backbone=1e-5, weight_decay=1e-4)
 wandb_logger = WandbLogger()
 
 # Callback to save the best model based on validation loss
-checkpoint_callback = ModelCheckpoint(
-    monitor='validation_loss',    # Name of the metric to monitor
-    dirpath='tatr_model/',        # Directory where the model should be saved
-    filename='best-model-{epoch:02d}-{validation_loss:.2f}', # Filename pattern of the checkpoint
-    save_top_k=1,                 # Save only the best model
-    mode='min',                   # 'min' since we want to minimize validation loss
-    save_last=False               # Do not save the last model automatically
+
+checkpoint_callback = TransformersCheckpointCallback(
+    save_path='tatr_model/best_model',
+    monitor='validation_loss',
+    mode='min'
 )
 
 trainer = Trainer(
-    max_steps=1000,
+    max_steps=500,
     gradient_clip_val=0.1,
     callbacks=[checkpoint_callback],
     logger=wandb_logger, 
 )
 
 trainer.fit(model)
-
-#torch.save(model.state_dict(), "tatr_model/best_yo.bin")
-
-# After training, load the best model and save it as a .bin file
-best_model_path = checkpoint_callback.best_model_path
-if best_model_path:
-    # Load the best model checkpoint using the specific model class
-    best_model = Detr.load_from_checkpoint(best_model_path)
-
-    # Save the state_dict of the best model
-    torch.save(best_model.state_dict(), 'tatr_model.bin')
-else:
-    print("No model checkpoint saved.")
 
 wandb.finish()

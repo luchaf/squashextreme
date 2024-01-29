@@ -3,12 +3,13 @@ import json
 import random
 import shutil
 
-# Directory containing your JSON and JPG files
+# Directory containing JSON and JPG files
 directory = 'data/images'
+structure_recognition_directory = 'data/images/table_detection_modeling_data'
 
 # Make train and val directories for images
-train_img_dir = os.path.join(directory, 'train')
-val_img_dir = os.path.join(directory, 'val')
+train_img_dir = os.path.join(structure_recognition_directory, 'train')
+val_img_dir = os.path.join(structure_recognition_directory, 'val')
 os.makedirs(train_img_dir, exist_ok=True)
 os.makedirs(val_img_dir, exist_ok=True)
 

@@ -93,7 +93,7 @@ def crop_and_label_page():
         key='label',
     )
 
-    cropped_img_dims = {"top":0,"left":0,"height":height,"width":width}
+    cropped_img_dims = {"top":0,"left":0,"height":0,"width":0}
     # Update the session state based on the label selection
     st.session_state['selected_label'] = label
 
@@ -129,6 +129,10 @@ def crop_and_label_page():
         drawing_mode=st.session_state['mode'],
         key="color_annotation_app",
     )
+
+    # useful for debugging:
+    #st.write(canvas_result.json_data["objects"])
+
     if canvas_result.json_data is not None:
         df = pd.json_normalize(canvas_result.json_data["objects"])
         if len(df) == 0:
@@ -138,10 +142,18 @@ def crop_and_label_page():
             st.session_state['color_to_label'][fill_color] = st.session_state['selected_label']
             df["label"] = df["fill"].map(st.session_state["color_to_label"])
 
+            # Include scale values
+            df["scaleX"] = df["scaleX"].fillna(1) 
+            df["scaleY"] = df["scaleY"].fillna(1)
+
             df["height_img"] = height
             df["width_img"] = width
             df["file_name"] = file_name
             df["id"] = df.apply(lambda x: x["file_name"].split("_")[1].split(".")[0], axis=1)
+
+            # Adjust the height and width using the scale values since the height and width don't update automatically...
+            df["width"] = (df["width"] * df["scaleX"]).round(2)
+            df["height"] = (df["height"] * df["scaleY"]).round(2)
             
             numerical_columns = ["top", "left", "width", "height"]
             df[numerical_columns] = df[numerical_columns].multiply(image_crop_factor)
@@ -163,8 +175,10 @@ def crop_and_label_page():
 
         # Convert labels to unique categories with IDs
         unique_labels = ["table", "table column", "table row", "table column header", "table projected row header", "table spanning cell"]
-        categories = [{"supercategory": "none", "id": i+1, "name": label} for i, label in enumerate(unique_labels)]
-        label_to_id = {label: i+1 for i, label in enumerate(unique_labels)}
+        #categories = [{"supercategory": "none", "id": i+1, "name": label} for i, label in enumerate(unique_labels)]
+        categories = [{"supercategory": "none", "id": i, "name": label} for i, label in enumerate(unique_labels)]
+        #label_to_id = {label: i+1 for i, label in enumerate(unique_labels)}
+        label_to_id = {label: i for i, label in enumerate(unique_labels)}
 
         # Construct the images data
         unique_images = df.drop_duplicates(subset=['id'])
@@ -186,7 +200,8 @@ def crop_and_label_page():
                 "ignore": 0,
                 "segmentation": [],
                 "image_id": row['id'],
-                "id": i + 1
+                #"id": i + 1
+                "id": i
             }
             annotations.append(annotation)
 
@@ -203,24 +218,10 @@ def crop_and_label_page():
 
         # Save to file
         with open(os.path.join(target_folder, f"{id_name}_output.json"), 'w') as f:
-            f.write(coco_json)
+           f.write(coco_json)
 
         # Print the JSON structure (for demonstration)
         st.write(coco_json)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         crop_area = (
             cropped_img_dims["left"], 
