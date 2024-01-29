@@ -11,6 +11,11 @@ from transformers import DetrForObjectDetection, TableTransformerForObjectDetect
 import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
+import wandb  # Import W&B
+from pytorch_lightning.loggers import WandbLogger  # Import the WandbLogger
+
+wandb.init(project="table_transformer")
+
         
 class CocoDetection(torchvision.datasets.CocoDetection):
     def __init__(self, img_folder, processor, train=True):
@@ -43,7 +48,7 @@ def collate_fn(batch):
   return batch
 
 class Detr(pl.LightningModule):
-     def __init__(self, lr, lr_backbone, weight_decay):
+     def __init__(self, lr=1e-4, lr_backbone=1e-5, weight_decay=1e-4):
          super().__init__()
          # replace COCO classification head with custom head
          # we specify the "no_timm" variant here to not rely on the timm library
@@ -125,19 +130,39 @@ batch = next(iter(train_dataloader))
 
 model = Detr(lr=1e-4, lr_backbone=1e-5, weight_decay=1e-4)
 
+# Initialize WandbLogger
+wandb_logger = WandbLogger()
+
 # Callback to save the best model based on validation loss
 checkpoint_callback = ModelCheckpoint(
     monitor='validation_loss',    # Name of the metric to monitor
-    dirpath='tatr_model/',      # Directory where the model should be saved
-    filename='best-model',        # Filename of the checkpoint
+    dirpath='tatr_model/',        # Directory where the model should be saved
+    filename='best-model-{epoch:02d}-{validation_loss:.2f}', # Filename pattern of the checkpoint
     save_top_k=1,                 # Save only the best model
     mode='min',                   # 'min' since we want to minimize validation loss
+    save_last=False               # Do not save the last model automatically
 )
 
 trainer = Trainer(
-    max_steps=300,
+    max_steps=1000,
     gradient_clip_val=0.1,
     callbacks=[checkpoint_callback],
+    logger=wandb_logger, 
 )
 
 trainer.fit(model)
+
+#torch.save(model.state_dict(), "tatr_model/best_yo.bin")
+
+# After training, load the best model and save it as a .bin file
+best_model_path = checkpoint_callback.best_model_path
+if best_model_path:
+    # Load the best model checkpoint using the specific model class
+    best_model = Detr.load_from_checkpoint(best_model_path)
+
+    # Save the state_dict of the best model
+    torch.save(best_model.state_dict(), 'tatr_model.bin')
+else:
+    print("No model checkpoint saved.")
+
+wandb.finish()

@@ -89,7 +89,7 @@ def crop_and_label_page():
     
     label = st.selectbox(
         "Select Label:",
-        ["table", "table row", "table column"],
+        ["table", "table column", "table row", "table column header", "table projected row header", "table spanning cell"],
         key='label',
     )
 
@@ -99,11 +99,17 @@ def crop_and_label_page():
 
     # Set the fill color based on the updated session state
     if st.session_state['selected_label'] == "table column":
-        fill_color = "rgba(255, 255, 0, 0.3)"  # Yellow for columns
+        fill_color = "rgba(255, 235, 59, 0.5)"  # Yellow for columns
     elif st.session_state['selected_label'] == "table row":
-        fill_color = "rgba(255, 0, 0, 0.3)"  # Red for rows
+        fill_color = "rgba(76, 175, 80, 0.5)"  # Green for rows
     elif st.session_state['selected_label'] == "table":
-        fill_color = "rgba(255, 192, 203, 0.6)"  # Green for table
+        fill_color = "rgba(33, 150, 243, 0.5)"  # Blue for table
+    elif st.session_state['selected_label'] == "table column header":
+        fill_color = "rgba(156, 39, 176, 0.5)"  # Purple for column headers
+    elif st.session_state['selected_label'] == "table projected row header":
+        fill_color = "rgba(255, 87, 34, 0.5)"  # Orange for projected row headers
+    elif st.session_state['selected_label'] == "table spanning cell":
+        fill_color = "rgba(158, 158, 158, 0.5)"  # Gray for spanning cells
 
     # Drawing mode selection
     mode = "transform" if st.checkbox("Move ROIs", False) else "rect"
