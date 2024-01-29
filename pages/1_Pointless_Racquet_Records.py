@@ -162,7 +162,7 @@ def crop_and_label_page():
         #df.to_parquet(os.path.join(target_folder, f"{id_name}.parquet"))
 
         # Convert labels to unique categories with IDs
-        unique_labels = ["table", "table row", "table column"]
+        unique_labels = ["table", "table column", "table row", "table column header", "table projected row header", "table spanning cell"]
         categories = [{"supercategory": "none", "id": i+1, "name": label} for i, label in enumerate(unique_labels)]
         label_to_id = {label: i+1 for i, label in enumerate(unique_labels)}
 
