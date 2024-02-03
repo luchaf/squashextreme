@@ -83,7 +83,7 @@ def crop_and_label_page():
     parent_directory = st.session_state["parent_directory"]
     target_folder = st.session_state["target_folder"]
     save_path = os.path.join(target_folder, file_name)
-    orig_img.save(save_path)
+    #orig_img.save(save_path)
     
     width, height = orig_img.size
     
@@ -217,8 +217,8 @@ def crop_and_label_page():
         coco_json = json.dumps(coco_format, indent=4)
 
         # Save to file
-        with open(os.path.join(target_folder, f"{id_name}_output.json"), 'w') as f:
-           f.write(coco_json)
+        # with open(os.path.join(target_folder, f"{id_name}_output.json"), 'w') as f:
+        #    f.write(coco_json)
 
         # Print the JSON structure (for demonstration)
         st.write(coco_json)

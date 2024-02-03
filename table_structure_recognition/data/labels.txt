@@ -1,6 +1,0 @@
-table
-table column
-table row
-table column header
-table projected row header
-table spanning cell

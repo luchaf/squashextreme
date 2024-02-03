@@ -174,7 +174,8 @@ class TableImageProcessor:
         feature_extractor_detr = DetrFeatureExtractor()
 
         # Initialize the table transformer model for object detection
-        tatr_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-transformer-structure-recognition")
+        #tatr_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-transformer-structure-recognition")
+        tatr_model = TableTransformerForObjectDetection.from_pretrained("luchaf/testest99")
         #tatr_model = TableTransformerForObjectDetection.from_pretrained("squashextreme/table_structure_recognition/tatr_model/best_model")
 
         # Initialize the recognition model
@@ -182,6 +183,7 @@ class TableImageProcessor:
 
         # Initialize the OCR predictor model for text detection and recognition
         model_ocr = ocr_predictor(det_arch='db_resnet50', reco_arch=reco_model, pretrained=True)
+        #model_ocr = ocr_predictor(det_arch='db_resnet50', reco_arch="parseq", pretrained=True)
 
         return feature_extractor_detr, tatr_model, reco_model, model_ocr
 
