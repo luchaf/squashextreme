@@ -7,7 +7,7 @@ import torchvision
 import pytorch_lightning as pl
 from transformers import DetrForObjectDetection, TableTransformerForObjectDetection, DetrImageProcessor
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import Callback
+from pytorch_lightning.callbacks import Callback, EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 import wandb
 import argparse
@@ -123,7 +123,16 @@ def main(args):
     model = Detr(model_name, args.lr, args.lr_backbone, args.weight_decay)
 
     checkpoint_callback = TransformersCheckpointCallback(save_path=args.save_path, monitor='validation_loss', mode='min')
-    trainer = Trainer(max_steps=args.max_steps, gradient_clip_val=args.gradient_clip_val, callbacks=[checkpoint_callback], logger=wandb_logger)
+    
+    early_stopping_callback = EarlyStopping(
+        monitor='validation_loss',
+        mode='min',
+        patience=10,
+        verbose=True,
+        min_delta=0.00
+    )    
+    
+    trainer = Trainer(max_steps=args.max_steps, gradient_clip_val=args.gradient_clip_val, callbacks=[checkpoint_callback, early_stopping_callback], logger=wandb_logger)
     trainer.fit(model, train_dataloader, val_dataloader)
 
     wandb.finish()
@@ -140,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_backbone", type=float, default=1e-5, help="Learning rate for the backbone.")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay.")
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size.")
-    parser.add_argument("--max_steps", type=int, default=500, help="Max training steps.")
+    parser.add_argument("--max_steps", type=int, default=1000, help="Max training steps.")
     parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping value.")
 
     args = parser.parse_args()
