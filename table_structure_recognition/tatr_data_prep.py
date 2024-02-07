@@ -73,42 +73,66 @@ class TatrImageDataProcessor:
 
     def copy_images_and_combine_jsons(self, file_list, dest_dir, start_annotation_id):
         """
-        Copies images to a destination directory and combines JSON data from multiple files into a single JSON.
+        Copies images to a destination directory and combines JSON data from multiple files into a single JSON object.
+
+        This function iterates through a list of filenames, copies each image to the specified destination directory,
+        and combines their corresponding JSON data (images, annotations, categories) into a single JSON object. 
+        It ensures each image and annotation has a unique ID, starting from 0 for images and starting from 
+        `start_annotation_id` for annotations. It also accurately captures and sets the dimensions (width and height) 
+        of each image.
 
         Args:
-            file_list (list): A list of filenames to process.
-            dest_dir (str): The destination directory where files should be copied.
-            start_annotation_id (int): annotation id, starts at 0 for train and val respectively
+            file_list (List[str]): A list of filenames to process. Each filename should correspond to a JSON file 
+                that contains metadata (including annotations) for a single image.
+            dest_dir (str): The destination directory path where the images should be copied to.
+            start_annotation_id (int): The starting ID for annotations. This allows for sequential numbering 
+                of annotations across multiple JSON files.
 
         Returns:
-            dict: A combined JSON object containing images, annotations, and categories from all files in the list.
+            Tuple[Dict, int]: A tuple containing two elements:
+                - A dictionary object that combines all images, annotations, and categories from the processed files.
+                - The next available annotation ID, which can be used as the starting ID for processing additional files.
+
         """
         combined_json = {'images': [], 'annotations': [], 'categories': []}
-        annotation_id_counter = start_annotation_id
         image_id_counter = 0  # Initialize a counter for image IDs starting at 0
-        
+        annotation_id_counter = start_annotation_id  # Initialize annotation ID counter
+
         for file_name in file_list:
             base_name = file_name.split('_output')[0]
             image_name = f'IMG_{base_name}.JPG'
-            shutil.copy2(os.path.join(self.base_directory, image_name), dest_dir)
+            image_path = os.path.join(self.base_directory, image_name)
+            # Copy the image to the destination directory
+            shutil.copy2(image_path, dest_dir)
             
+            # Open the image to get its dimensions
+            with Image.open(image_path) as img:
+                width, height = img.size
+
             with open(os.path.join(self.base_directory, file_name), 'r') as f:
                 data = json.load(f)
                 
-                # Update image IDs in the data['images'] list
-                for image in data['images']:
-                    # Assign new image ID
-                    image['id'] = image_id_counter
-                    combined_json['images'].append(image)
-                    image_id_counter += 1  # Increment for the next image
-                    
-                combined_json['categories'] = data.get('categories', combined_json['categories'])
+                # Add image information with updated image ID and actual dimensions
+                combined_json['images'].append({
+                    "file_name": image_name,
+                    "height": height,
+                    "width": width,
+                    "id": image_id_counter
+                })
+                
+                # Assuming categories are consistent across files, update if needed
+                if 'categories' in data and not combined_json['categories']:
+                    combined_json['categories'] = data['categories']
 
-                for annotation in data.get('annotations', []):
-                    # Update 'image_id' in annotations to match the new image IDs
-                    annotation['image_id'] = annotation['id'] = annotation_id_counter
-                    combined_json['annotations'].append(annotation)
-                    annotation_id_counter += 1  # Increment the annotation ID counter
+                # Update annotations with new image_id and sequential annotation IDs
+                for annotation in data['annotations']:
+                    new_annotation = annotation.copy()
+                    new_annotation['image_id'] = image_id_counter
+                    new_annotation['id'] = annotation_id_counter
+                    combined_json['annotations'].append(new_annotation)
+                    annotation_id_counter += 1  # Increment annotation ID for the next annotation
+
+            image_id_counter += 1  # Increment image ID for the next image
 
         return combined_json, annotation_id_counter
 
