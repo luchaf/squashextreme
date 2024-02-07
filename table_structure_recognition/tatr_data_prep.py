@@ -62,45 +62,56 @@ class TatrImageDataProcessor:
         os.makedirs(val_img_dir, exist_ok=True)
 
         # Process training and validation files separately
-        train_json = self.copy_images_and_combine_jsons(train_files, self.base_directory, train_img_dir)
+        train_json, _ = self.copy_images_and_combine_jsons(train_files, train_img_dir, 0)
         with open(os.path.join(train_img_dir, 'train.json'), 'w') as f:
             json.dump(train_json, f, indent=4)
 
-        val_json = self.copy_images_and_combine_jsons(val_files, self.base_directory, val_img_dir)
+        val_json, _ = self.copy_images_and_combine_jsons(val_files, val_img_dir, 0)
         with open(os.path.join(val_img_dir, 'val.json'), 'w') as f:
             json.dump(val_json, f, indent=4)
 
-    def copy_images_and_combine_jsons(self, file_list, src_dir, dest_dir):
+
+    def copy_images_and_combine_jsons(self, file_list, dest_dir, start_annotation_id):
         """
         Copies images to a destination directory and combines JSON data from multiple files into a single JSON.
 
         Args:
             file_list (list): A list of filenames to process.
-            src_dir (str): The source directory where the files are located.
             dest_dir (str): The destination directory where files should be copied.
+            start_annotation_id (int): annotation id, starts at 0 for train and val respectively
 
         Returns:
             dict: A combined JSON object containing images, annotations, and categories from all files in the list.
         """
-        combined = {'images': [], 'annotations': [], 'categories': []}
+        combined_json = {'images': [], 'annotations': [], 'categories': []}
+        annotation_id_counter = start_annotation_id
+        image_id_counter = 0  # Initialize a counter for image IDs starting at 0
+        
         for file_name in file_list:
-            # Extract the base name and construct the image file name
             base_name = file_name.split('_output')[0]
             image_name = f'IMG_{base_name}.JPG'
-            # Copy the image file to the destination directory
-            shutil.copy2(os.path.join(src_dir, image_name), dest_dir)
-            # Open and combine JSON data from the file
-            with open(os.path.join(src_dir, file_name), 'r') as f:
+            shutil.copy2(os.path.join(self.base_directory, image_name), dest_dir)
+            
+            with open(os.path.join(self.base_directory, file_name), 'r') as f:
                 data = json.load(f)
-                for image in data.get('images', []):
-                    image['id'] = self.convert_id_to_int(image['id'])
-                    combined['images'].append(image)
+                
+                # Update image IDs in the data['images'] list
+                for image in data['images']:
+                    # Assign new image ID
+                    image['id'] = image_id_counter
+                    combined_json['images'].append(image)
+                    image_id_counter += 1  # Increment for the next image
+                    
+                combined_json['categories'] = data.get('categories', combined_json['categories'])
+
                 for annotation in data.get('annotations', []):
-                    annotation['image_id'] = self.convert_id_to_int(annotation['image_id'])
-                    combined['annotations'].append(annotation)
-                if 'categories' in data and not combined['categories']:
-                    combined['categories'] = data['categories']
-        return combined
+                    # Update 'image_id' in annotations to match the new image IDs
+                    annotation['image_id'] = annotation['id'] = annotation_id_counter
+                    combined_json['annotations'].append(annotation)
+                    annotation_id_counter += 1  # Increment the annotation ID counter
+
+        return combined_json, annotation_id_counter
+
 
     @staticmethod
     def convert_id_to_int(id_str):
@@ -190,21 +201,33 @@ class TatrImageDataProcessor:
                 annotation['bbox'] = updated_bbox
                 updated_annotations.append(annotation)
 
+
     def filter_annotations_and_categories(self, json_file_path):
         """
-        Filters annotations and categories in a JSON file to include only those related to tables.
+        Filters annotations and categories in a JSON file to include only those related to tables,
+        and reassigns annotation IDs to ensure they are sequential starting from 0.
 
         Args:
             json_file_path (str): The path to the JSON file to filter.
         """
         with open(json_file_path, 'r') as file:
             data = json.load(file)
+        
+        # Filter annotations and categories related to tables
         filtered_annotations = [anno for anno in data['annotations'] if anno['category_id'] == 0]
         filtered_categories = [category for category in data['categories'] if category['id'] == 0]
+        
+        # Reassign IDs to filtered annotations to ensure they are sequential starting from 0
+        for i, annotation in enumerate(filtered_annotations):
+            annotation['id'] = i  # Reassign ID
+
+        # Update the data with filtered and updated annotations and categories
         data['annotations'] = filtered_annotations
         data['categories'] = filtered_categories
+        
         with open(json_file_path, 'w') as file:
             json.dump(data, file, indent=4)
+
 
 def main():
     """
