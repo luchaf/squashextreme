@@ -1,11 +1,21 @@
 import cv2
 import math
+from math import floor
 import matplotlib.pyplot as plt
 import numpy as np
 from skimage.color import rgb2gray, rgba2rgb
 from skimage.feature import canny
 from skimage.transform import hough_line, hough_line_peaks
 from typing import Optional, Tuple, List, Dict, Any
+from PIL import Image
+from statistics import median_low
+import tempfile
+from transformers import BertTokenizer
+import os
+from doctr.io import DocumentFile
+from doctr.models import ocr_predictor
+import torch
+
 
 ImageType = np.ndarray
 
@@ -76,24 +86,6 @@ def visualize_hough_lines(original_image: np.ndarray, accumulator: np.ndarray, a
     ax[1].set_axis_off()
 
     plt.tight_layout()
-    plt.show()
-
-
-def visualize_hough_space(accumulator: np.ndarray, angles: np.ndarray, distances: np.ndarray):
-    """
-    Visualize the Hough space (accumulator space) of the Hough Transform.
-
-    Args:
-        accumulator (np.ndarray): The accumulator array from the Hough Transform.
-        angles (np.ndarray): The array of angles used in the Hough Transform.
-        distances (np.ndarray): The array of distances used in the Hough Transform.
-    """
-    fig, ax = plt.subplots(figsize=(8, 6))
-    ax.imshow(accumulator, cmap='hot', aspect='auto',
-              extent=[np.rad2deg(angles[0]), np.rad2deg(angles[-1]), distances[-1], distances[0]])
-    ax.set_title('Hough Space')
-    ax.set_xlabel('Angles (degrees)')
-    ax.set_ylabel('Distances (pixels)')
     plt.show()
 
 
@@ -419,7 +411,7 @@ def determine_skew(image: ImageType, sigma: float = 2.0, num_peaks: int = 20, mi
     return skew_angle_deg, angles_peaks, corrected_angles
 
  
-def process_image(image_path: str, output_path: str, plot_visualization: bool = True, image_scale_factor: float = 0.5):
+def process_image(image_path: str, plot_visualization: bool = True, image_scale_factor: float = 0.5):
     """
     Processes an image to detect and correct skew, then saves the corrected image.
     
@@ -459,18 +451,193 @@ def process_image(image_path: str, output_path: str, plot_visualization: bool = 
     # If a skew angle is detected, correct the skew by rotating the original image
     if skew_angle is not None:
         # Rotate the original image to correct the skew
-        rotated_image = rotate_image(image, skew_angle)
+        #rotated_image = rotate_image(image, skew_angle)
+        rotated_image = Image.open(image_path).rotate(skew_angle, expand=True, fillcolor="white") # quality needs to be tested
+        
         # Save the corrected image to the specified output path
-        cv2.imwrite(output_path, rotated_image)
+        #rotated_image.save(output_path)
+        #cv2.imwrite(output_path, rotated_image)
         print(f"Detected angle is {skew_angle}")
-        print(f"Rotated image saved to {output_path}")
+        #print(f"Rotated image saved to {output_path}")
 
         # Optionally, display the corrected image using matplotlib
         if plot_visualization:
-            plt.imshow(cv2.cvtColor(rotated_image, cv2.COLOR_BGR2RGB))
+            plt.imshow(rotated_image)
             plt.axis('off')
             plt.show()
     else:
         print("No significant skew detected.")
         
-    return skew_angle, angles_peaks, corrected_angles
+    return skew_angle, angles_peaks, corrected_angles, rotated_image
+
+
+def crop_center_vertically(image, height=200):
+    """
+    Crops the center portion of an image vertically to a specified height while maintaining the original width.
+    This function calculates the vertical center of the image and crops the image to the specified height from
+    this center point. The width of the image remains unchanged.
+
+    Args:
+        image (PIL.Image.Image): The image to be cropped. This should be an instance of a PIL Image.
+        height (int, optional): The height of the crop in pixels. Defaults to 200 pixels. If the specified height
+            is greater than the image height, the original image height is used, resulting in no vertical cropping.
+
+    Returns:
+        PIL.Image.Image: A new image object representing the vertically cropped image. This image has the same width
+            as the original image and a height as specified by the `height` parameter, unless the original image
+            is shorter, in which case the original height is preserved.
+    """
+    # Get the dimensions of the original image
+    img_width, img_height = image.size
+    
+    # Calculate the top coordinate to start cropping from, ensuring it's centered vertically
+    top = (img_height - height) // 2
+    # Calculate the bottom coordinate by adding the desired height to the top coordinate
+    bottom = top + height
+    
+    # Crop the image from the calculated top to bottom while keeping the full width
+    # The crop box is defined as (left, upper, right, lower)
+    return image.crop((0, top, img_width, bottom))
+
+
+def bert_tokenizer_score_list_of_words(words: list, tokenizer: BertTokenizer) -> float:
+    """
+    Computes a score for a list of words based on tokenization metrics using a BERT tokenizer.
+    The scoring system evaluates the list's overall "meaningfulness" by incorporating factors such as
+    the length of subtokens, the proportion of known subtokens to total subtokens, and the presence of
+    unknown tokens.
+
+    Args:
+        words (list): The list of words to be scored. Each word is a string.
+        tokenizer (BertTokenizer): An instance of BertTokenizer used for tokenizing the words.
+            This tokenizer splits words into tokens or subtokens that BERT models understand.
+
+    Returns:
+        float: An average score for the list of words, where a lower score indicates a higher
+            likelihood of the content being meaningful. The score is influenced by the presence
+            of unknown tokens, the average length of subtokens, and the proportion of known
+            subtokens.
+    """
+    total_score = 0  # Initialize total score
+
+    for word in words:  # Iterate over each word in the list
+        tokens = tokenizer.tokenize(word)  # Tokenize the current word
+
+        if not tokens:  # Check if the word could not be tokenized at all
+            total_score += 100  # Apply a heavy penalty for untokenizable words
+            continue
+
+        # Initialize score for the current word
+        score = 0
+        # Count known tokens, ignoring '[UNK]' which stands for unknown tokens
+        known_token_count = sum(1 for token in tokens if token != '[UNK]')
+        # Calculate the proportion of known tokens to total tokens
+        known_token_proportion = known_token_count / len(tokens) if tokens else 0
+        
+        # Calculate average subtoken length, excluding '[UNK]', '[CLS]', and '[SEP]' tokens
+        avg_subtoken_length = sum(len(token) for token in tokens if token not in ['[UNK]', '[CLS]', '[SEP]']) / len(tokens) if tokens else 0
+        
+        # Apply heuristic adjustments
+        if '[UNK]' in tokens:  # Penalize the presence of unknown tokens
+            score += 20
+        # Reward higher proportions of known tokens
+        score += (5 - known_token_proportion * 5)
+        # Reward longer average subtoken lengths, assuming they indicate meaningful content
+        score += (5 - avg_subtoken_length)
+        
+        # Adjust score for compound words that are tokenized into known subwords
+        if len(tokens) > 1 and known_token_proportion == 1:
+            score -= 2  # Apply a lesser penalty for fully known compound words
+        
+        total_score += score  # Update total score with the score for this word
+    
+    # Calculate average score per word in the list
+    average_score = total_score / len(words) if words else 0
+    return average_score  # Return the average score
+
+
+def analyze_ocr_results(docs: DocumentFile, tokenizer: BertTokenizer) -> Tuple[int, DocumentFile]:
+    """
+    Analyzes OCR results from multiple document orientations to determine the best orientation.
+    
+    Args:
+        docs (Document): Number of OCR result documents for different orientations.
+    
+    Returns:
+        Tuple[int, Document]: The index of the best orientation.
+    """
+    best_score = float('inf')
+    best_index = -1
+    
+    for index, doc in enumerate(docs):
+        list_of_words = []
+        for block in doc['blocks']:
+            for line in block['lines']:
+                for word_info in line['words']:
+                    list_of_words.append(word_info['value'])
+        score = bert_tokenizer_score_list_of_words(list_of_words, tokenizer)
+        if score < best_score:
+            best_score = score
+            best_index = index
+
+    return best_index
+
+
+def orientation_rotation_estimation(img: Image, predictor: ocr_predictor, tokenizer: BertTokenizer):
+    """
+    Estimates the orientation of an image by rotating it to several angles, applying OCR,
+    and determining the best orientation based on OCR results and tokenization metrics.
+
+    The function rotates the input image to 0, 90, -90, and 180 degrees, crops the center
+    vertically for each rotation, and saves these variants as temporary files. It then
+    processes each variant with an OCR predictor, analyzes the OCR results to estimate the
+    most probable correct orientation of the image, and finally returns the estimated angle
+    and the rotated image in this orientation.
+
+    Args:
+        img (Image): The input image to estimate orientation for. This should be a PIL Image instance.
+        predictor (ocr_predictor): An OCR model predictor capable of processing images to extract text.
+        tokenizer (BertTokenizer): A BERT tokenizer used for analyzing OCR results to estimate the best orientation.
+
+    Returns:
+        tuple: A tuple containing the estimated angle (as an integer from the set [0, 90, -90, 180])
+               and the rotated image in the estimated correct orientation (as a PIL Image).
+    """
+    # Define potential rotation angles
+    angles = [0, 90, -90, 180]
+    temp_files = []  # Store paths to temporary files for OCR processing
+
+    # Rotate, crop, and save each rotated image variant
+    for angle in angles:
+        rotated_image = img.rotate(angle, expand=True, fillcolor="white")  # Rotate with angle, filling background with white
+        cropped_image = crop_center_vertically(rotated_image, 300)  # Crop the rotated image to focus on the center
+
+        # Save the cropped image to a temporary file for OCR processing
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+        cropped_image.save(temp_file.name)
+        temp_files.append(temp_file)
+    
+    # Apply OCR on each cropped and rotated image, storing results
+    ocr_results = []
+    for temp_file in temp_files:
+        page = DocumentFile.from_images(temp_file.name)[0]  # Load image for OCR
+        result = predictor([page]).export()["pages"][0]  # Process image with OCR and get results
+        ocr_results.append(result)
+    
+    # Analyze OCR results with tokenizer to find best rotation
+    best_index = analyze_ocr_results(ocr_results, tokenizer)
+
+    # Cleanup temporary files
+    for temp_file in temp_files:
+        temp_file.close()  # Close the file
+        os.unlink(temp_file.name)  # Delete the file
+
+    # Determine and print the estimated best angle for the original image
+    estimated_angle = angles[best_index]
+    print(f"Estimated angle: {estimated_angle}")
+    
+    # Rotate the original image to the estimated best orientation
+    rotated_image = img.rotate(estimated_angle, expand=True, fillcolor="white")
+
+    # Return the estimated angle and the rotated image
+    return estimated_angle, rotated_image
