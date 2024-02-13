@@ -15,6 +15,8 @@ import os
 from doctr.io import DocumentFile
 from doctr.models import ocr_predictor
 import torch
+import streamlit as st
+import time
 
 
 ImageType = np.ndarray
@@ -357,7 +359,7 @@ def rotate_image(image: Any, angle: float) -> Any:
     return rotated_image
 
 
-def determine_skew(image: ImageType, sigma: float = 2.0, num_peaks: int = 20, min_deviation: float = 1.0, plot_visualization: bool = False) -> Tuple[Optional[float], np.ndarray, np.ndarray]:
+def determine_skew(image: ImageType, sigma: float = 1.0, num_peaks: int = 20, min_deviation: float = 0.1, plot_visualization: bool = False) -> Tuple[Optional[float], np.ndarray, np.ndarray]:
     """
     Detects the skew angle of an image after performing a Hough transform to find lines in the image.
     
@@ -394,7 +396,7 @@ def determine_skew(image: ImageType, sigma: float = 2.0, num_peaks: int = 20, mi
     # Find peaks in the Hough transform
     _, angles_peaks, dists_peaks = hough_line_peaks(accumulator, np.array(angles), np.array(distances), num_peaks=num_peaks)
     # Correct and filter angle peaks
-    corrected_angles = filter_and_correct_angles(angles_peaks, -np.pi/8, np.pi/8)
+    corrected_angles = filter_and_correct_angles(angles_peaks, -np.pi/4, np.pi/4)
 
     # Optional visualization of the process
     if plot_visualization:
@@ -457,6 +459,8 @@ def process_image(image_path: str, plot_visualization: bool = True, image_scale_
         # Save the corrected image to the specified output path
         #rotated_image.save(output_path)
         #cv2.imwrite(output_path, rotated_image)
+        skew_angle = round(skew_angle, 2)
+        st.write(f"Hough thinks the angle is {skew_angle}°")
         print(f"Detected angle is {skew_angle}")
         #print(f"Rotated image saved to {output_path}")
 
@@ -500,33 +504,78 @@ def crop_center_vertically(image, height=200):
     return image.crop((0, top, img_width, bottom))
 
 
-def bert_tokenizer_score_list_of_words(words: list, tokenizer: BertTokenizer) -> float:
+def crop_center(image, width=200, height=200):
     """
-    Computes a score for a list of words based on tokenization metrics using a BERT tokenizer.
-    The scoring system evaluates the list's overall "meaningfulness" by incorporating factors such as
-    the length of subtokens, the proportion of known subtokens to total subtokens, and the presence of
-    unknown tokens.
+    Crops the center portion of an image to a specified width and height.
+    This function calculates the center of the image and crops the image to the specified width and height
+    from this center point.
 
     Args:
-        words (list): The list of words to be scored. Each word is a string.
+        image (PIL.Image.Image): The image to be cropped. This should be an instance of a PIL Image.
+        width (int, optional): The width of the crop in pixels. Defaults to 200 pixels. If the specified width
+            is greater than the image width, the original image width is used, resulting in no horizontal cropping.
+        height (int, optional): The height of the crop in pixels. Defaults to 200 pixels. If the specified height
+            is greater than the image height, the original image height is used, resulting in no vertical cropping.
+
+    Returns:
+        PIL.Image.Image: A new image object representing the cropped image. This image has the width and height
+            as specified by the `width` and `height` parameters, unless the original image is smaller in either
+            dimension, in which case the original dimension is preserved.
+    """
+    # Get the dimensions of the original image
+    img_width, img_height = image.size
+    
+    # Calculate the center and start coordinates for both vertical and horizontal cropping
+    left = max((img_width - width) // 2, 0)
+    top = max((img_height - height) // 2, 0)
+    
+    # Calculate the right and bottom coordinates by adding the desired width and height to the left and top coordinates
+    right = left + width
+    bottom = top + height
+    
+    # Ensure the right and bottom do not exceed the image's dimensions
+    right = min(right, img_width)
+    bottom = min(bottom, img_height)
+    
+    # Crop the image from the calculated coordinates
+    # The crop box is defined as (left, upper, right, lower)
+    return image.crop((left, top, right, bottom))
+
+
+def bert_tokenizer_score_list_of_words(words: List[str], confidences: List[float], tokenizer: BertTokenizer) -> float:
+    """
+    Computes a score for a list of words based on tokenization metrics using a BERT tokenizer,
+    while also considering the confidence of each word and the total number of words.
+
+    Args:
+        words (List[str]): The list of words to be scored. Each word is a string.
+        confidences (List[float]): The list of confidence scores corresponding to each word.
         tokenizer (BertTokenizer): An instance of BertTokenizer used for tokenizing the words.
-            This tokenizer splits words into tokens or subtokens that BERT models understand.
 
     Returns:
         float: An average score for the list of words, where a lower score indicates a higher
             likelihood of the content being meaningful. The score is influenced by the presence
-            of unknown tokens, the average length of subtokens, and the proportion of known
-            subtokens.
+            of unknown tokens, the average length of subtokens, the proportion of known
+            subtokens, and the confidence levels of the words.
     """
-    total_score = 0  # Initialize total score
 
-    for word in words:  # Iterate over each word in the list
+    if not words:  # Check if the list of words is empty
+        return 1000  # Return a high penalty for empty inputs
+         
+    total_score = 0  # Initialize total score
+    total_confidence_penalty = 0  # Initialize total confidence penalty
+    total_word_length = 0
+    
+    for word, confidence in zip(words, confidences):  # Iterate over each word and its confidence
         tokens = tokenizer.tokenize(word)  # Tokenize the current word
 
         if not tokens:  # Check if the word could not be tokenized at all
             total_score += 100  # Apply a heavy penalty for untokenizable words
             continue
 
+        # Update total word length
+        total_word_length += len(word)
+        
         # Initialize score for the current word
         score = 0
         # Count known tokens, ignoring '[UNK]' which stands for unknown tokens
@@ -537,50 +586,76 @@ def bert_tokenizer_score_list_of_words(words: list, tokenizer: BertTokenizer) ->
         # Calculate average subtoken length, excluding '[UNK]', '[CLS]', and '[SEP]' tokens
         avg_subtoken_length = sum(len(token) for token in tokens if token not in ['[UNK]', '[CLS]', '[SEP]']) / len(tokens) if tokens else 0
         
-        # Apply heuristic adjustments
+        # Apply heuristic adjustments based on tokenization results
         if '[UNK]' in tokens:  # Penalize the presence of unknown tokens
             score += 20
-        # Reward higher proportions of known tokens
-        score += (5 - known_token_proportion * 5)
-        # Reward longer average subtoken lengths, assuming they indicate meaningful content
-        score += (5 - avg_subtoken_length)
+        score += (2 - known_token_proportion * 5)  # Reward higher proportions of known tokens
+        score += (2 - avg_subtoken_length)  # Reward longer average subtoken lengths
         
-        # Adjust score for compound words that are tokenized into known subwords
         if len(tokens) > 1 and known_token_proportion == 1:
-            score -= 2  # Apply a lesser penalty for fully known compound words
-        
-        total_score += score  # Update total score with the score for this word
+            score -= 2  # Lesser penalty for fully known compound words
+
+        # Adjust score based on word confidence
+        confidence_penalty = (1 - confidence) * 10  # Scale confidence penalty
+        total_confidence_penalty += confidence_penalty
+
+        total_score += score + confidence_penalty  # Update total score with the score for this word
     
-    # Calculate average score per word in the list
-    average_score = total_score / len(words) if words else 0
-    return average_score  # Return the average score
+    # Modify scoring to favor more and longer words
+    avg_word_length = total_word_length / len(words) if words else 0
+    words_score_bonus = len(words) ** 1.5  # Exponential bonus for more words
+    length_score_bonus = avg_word_length ** 2  # Exponential bonus for longer average word length
 
+    # Incorporate bonuses into the average score calculation
+    adjusted_score = (total_score + total_confidence_penalty - words_score_bonus - length_score_bonus) / max(1, len(words))
 
-def analyze_ocr_results(docs: DocumentFile, tokenizer: BertTokenizer) -> Tuple[int, DocumentFile]:
+    return adjusted_score
+
+def normalize_scores(scores):
+    min_score = min(scores.values())
+    max_score = max(scores.values())
+    normalized_scores = {key: 1 - ((value - min_score) / (max_score - min_score)) for key, value in scores.items()}
+    sum_normalized_scores = sum(normalized_scores.values())
+    adjusted_scores = {key: value / sum_normalized_scores for key, value in normalized_scores.items()}
+    return adjusted_scores
+    
+def analyze_ocr_results(docs: List[dict], tokenizer: BertTokenizer) -> Tuple[int, dict]:
     """
     Analyzes OCR results from multiple document orientations to determine the best orientation.
-    
+    Now also considers the confidence of each word in the OCR results.
+
     Args:
-        docs (Document): Number of OCR result documents for different orientations.
-    
+        docs (List[dict]): List of OCR result documents for different orientations.
+        tokenizer (BertTokenizer): An instance of BertTokenizer used for tokenizing the words.
+
     Returns:
-        Tuple[int, Document]: The index of the best orientation.
+        Tuple[int, dict]: The index of the best orientation and the OCR results document for that orientation.
     """
+    scores = {}
     best_score = float('inf')
     best_index = -1
-    
+
     for index, doc in enumerate(docs):
         list_of_words = []
+        confidences = []
         for block in doc['blocks']:
             for line in block['lines']:
                 for word_info in line['words']:
                     list_of_words.append(word_info['value'])
-        score = bert_tokenizer_score_list_of_words(list_of_words, tokenizer)
+                    confidences.append(word_info['confidence'])
+        # Adjust the function call to include confidences
+        score = bert_tokenizer_score_list_of_words(list_of_words, confidences, tokenizer)
+        scores[f"orientation {index}"] = score
+        print(f"Score for orientation {index}: {score}")
         if score < best_score:
             best_score = score
             best_index = index
 
-    return best_index
+    # Normalize and adjust scores so their sum equals 1
+    adjusted_scores = normalize_scores(scores)
+    
+    # Return both the index of the best orientation and the OCR results for that orientation
+    return best_index, adjusted_scores
 
 
 def orientation_rotation_estimation(img: Image, predictor: ocr_predictor, tokenizer: BertTokenizer):
@@ -607,25 +682,35 @@ def orientation_rotation_estimation(img: Image, predictor: ocr_predictor, tokeni
     angles = [0, 90, -90, 180]
     temp_files = []  # Store paths to temporary files for OCR processing
 
+    start_time = time.time()
     # Rotate, crop, and save each rotated image variant
     for angle in angles:
-        rotated_image = img.rotate(angle, expand=True, fillcolor="white")  # Rotate with angle, filling background with white
-        cropped_image = crop_center_vertically(rotated_image, 300)  # Crop the rotated image to focus on the center
+        cropped_image = img.rotate(angle, expand=True, fillcolor="white")  # Rotate with angle, filling background with white
+        #cropped_image = crop_center_vertically(rotated_image, 300)  # Crop the rotated image to focus on the center
+
+        # Convert the cropped image to RGB if it's in RGBA mode to avoid the OSError when saving as JPEG
+        if cropped_image.mode == 'RGBA':
+            cropped_image = cropped_image.convert("RGB")
 
         # Save the cropped image to a temporary file for OCR processing
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
         cropped_image.save(temp_file.name)
         temp_files.append(temp_file)
-    
+    end_time = time.time()
+    print(f"Execution time rotate and save: {end_time - start_time} seconds")
+
+    start_time = time.time()
     # Apply OCR on each cropped and rotated image, storing results
     ocr_results = []
     for temp_file in temp_files:
         page = DocumentFile.from_images(temp_file.name)[0]  # Load image for OCR
         result = predictor([page]).export()["pages"][0]  # Process image with OCR and get results
         ocr_results.append(result)
+    end_time = time.time()
+    print(f"Execution time ocr: {end_time - start_time} seconds")
     
     # Analyze OCR results with tokenizer to find best rotation
-    best_index = analyze_ocr_results(ocr_results, tokenizer)
+    best_index, scores_normalized = analyze_ocr_results(ocr_results, tokenizer)
 
     # Cleanup temporary files
     for temp_file in temp_files:
@@ -634,10 +719,12 @@ def orientation_rotation_estimation(img: Image, predictor: ocr_predictor, tokeni
 
     # Determine and print the estimated best angle for the original image
     estimated_angle = angles[best_index]
+    estimated_angle = round(estimated_angle, 2)
     print(f"Estimated angle: {estimated_angle}")
+    st.write(f"Robert aka Rotation Bert corrects Houghs estimage by {estimated_angle}°")
     
     # Rotate the original image to the estimated best orientation
     rotated_image = img.rotate(estimated_angle, expand=True, fillcolor="white")
 
     # Return the estimated angle and the rotated image
-    return estimated_angle, rotated_image
+    return estimated_angle, rotated_image, ocr_results, scores_normalized
