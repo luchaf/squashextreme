@@ -641,8 +641,9 @@ def analyze_ocr_results(docs: List[dict], tokenizer: BertTokenizer) -> Tuple[int
         for block in doc['blocks']:
             for line in block['lines']:
                 for word_info in line['words']:
-                    list_of_words.append(word_info['value'])
-                    confidences.append(word_info['confidence'])
+                    if len(word_info['value'])>1:
+                        list_of_words.append(word_info['value'])
+                        confidences.append(word_info['confidence'])
         # Adjust the function call to include confidences
         score = bert_tokenizer_score_list_of_words(list_of_words, confidences, tokenizer)
         scores[f"orientation {index}"] = score

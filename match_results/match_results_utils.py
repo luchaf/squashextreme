@@ -175,7 +175,7 @@ class TableImageProcessor:
 
         # Initialize the table transformer model for object detection
         #tatr_model = TableTransformerForObjectDetection.from_pretrained("microsoft/table-transformer-structure-recognition")
-        tatr_model = TableTransformerForObjectDetection.from_pretrained("luchaf/testest99")
+        tatr_model = TableTransformerForObjectDetection.from_pretrained("luchaf/table-transformer-structure-recognition-pointless")
         #tatr_model = TableTransformerForObjectDetection.from_pretrained("squashextreme/table_structure_recognition/tatr_model/best_model")
 
         # Initialize the recognition model
@@ -223,7 +223,7 @@ class TableImageProcessor:
             outputs = self.tatr_model(**encoding)
 
         # Post-process the model output to get the bounding boxes and labels
-        results = self.feature_extractor.post_process_object_detection(outputs, threshold=0.7, target_sizes=[(height, width)])[0]
+        results = self.feature_extractor.post_process_object_detection(outputs, threshold=0.9, target_sizes=[(height, width)])[0]
         boxes, labels = results['boxes'].tolist(), results['labels'].tolist()
 
         # Extract the cell locations based on the labels

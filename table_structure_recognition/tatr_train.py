@@ -42,7 +42,6 @@ class CocoDetection(torchvision.datasets.CocoDetection):
         target = encoding["labels"][0]
         return pixel_values, target
 
-
 class CollateFunction:
     def __init__(self, processor):
         self.processor = processor
@@ -53,7 +52,6 @@ class CollateFunction:
         labels = [item[1] for item in batch]
         batched = {'pixel_values': encoding['pixel_values'], 'pixel_mask': encoding['pixel_mask'], 'labels': labels}
         return batched
-
 
 class Detr(pl.LightningModule):
     def __init__(self, model_name, lr=1e-4, lr_backbone=1e-5, weight_decay=1e-4):
@@ -100,7 +98,7 @@ class Detr(pl.LightningModule):
 
 def main(args):
     # Initialize WandbLogger with dynamic project name based on the task
-    wandb_logger = WandbLogger(project=f"table_transformer_{args.task}", log_model="all")
+    wandb_logger = WandbLogger(project=f"table_transformer_{args.task}", log_model=False)
 
     os.makedirs(args.save_path, exist_ok=True)
 
@@ -127,7 +125,7 @@ def main(args):
     early_stopping_callback = EarlyStopping(
         monitor='validation_loss',
         mode='min',
-        patience=10,
+        patience=15,
         verbose=True,
         min_delta=0.00
     )    
@@ -149,7 +147,7 @@ if __name__ == "__main__":
     parser.add_argument("--lr_backbone", type=float, default=1e-5, help="Learning rate for the backbone.")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay.")
     parser.add_argument("--batch_size", type=int, default=4, help="Batch size.")
-    parser.add_argument("--max_steps", type=int, default=1000, help="Max training steps.")
+    parser.add_argument("--max_steps", type=int, default=10000, help="Max training steps.")
     parser.add_argument("--gradient_clip_val", type=float, default=0.1, help="Gradient clipping value.")
 
     args = parser.parse_args()

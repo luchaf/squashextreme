@@ -26,6 +26,7 @@ defusedxml>=0.7.0
 mplcursors>=0.3
 unidecode>=1.0.0
 huggingface-hub>=0.5.0
+scikit-image
 scikit-learn
 wandb
 streamlit-drawable-canvas
