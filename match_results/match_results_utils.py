@@ -51,9 +51,9 @@ class SquashMatchDatabase:
                 csv_path = os.path.join('/teamspace/studios/this_studio/squashextreme/match_results', 'squash.csv')
         except:
             if db_path is None:
-                db_path = os.path.join('/match_results', 'squash.db')
+                db_path = os.path.join('/mount/src/squashextreme/match_results', 'squash.db')
             if csv_path is None:
-                csv_path = os.path.join('/match_results', 'squash.csv')
+                csv_path = os.path.join('/mount/src/squashextreme/match_results', 'squash.csv')
 
         self.db_path = db_path
         self.csv_path = csv_path
