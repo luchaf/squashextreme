@@ -34,3 +34,5 @@ streamlit-cropper
 streamlit-img-label
 pascal_voc_writer
 pycocotools
+python-levenshtein
+fuzzywuzzy
