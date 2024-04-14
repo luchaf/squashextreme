@@ -1,5 +1,3 @@
-import gspread
-from google.oauth2.service_account import Credentials
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import pandas as pd
