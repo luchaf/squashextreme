@@ -44,11 +44,17 @@ class SquashMatchDatabase:
             db_path (str): Path to the SQLite database file.
             csv_path (str): Path to the CSV file for exporting data.
         """
-        if db_path is None:
-            db_path = os.path.join('/teamspace/studios/this_studio/squashextreme/match_results', 'squash.db')
-        if csv_path is None:
-            csv_path = os.path.join('/teamspace/studios/this_studio/squashextreme/match_results', 'squash.csv')
-                
+        try: 
+            if db_path is None:
+                db_path = os.path.join('/teamspace/studios/this_studio/squashextreme/match_results', 'squash.db')
+            if csv_path is None:
+                csv_path = os.path.join('/teamspace/studios/this_studio/squashextreme/match_results', 'squash.csv')
+        except:
+            if db_path is None:
+                db_path = os.path.join('/match_results', 'squash.db')
+            if csv_path is None:
+                csv_path = os.path.join('/match_results', 'squash.csv')
+
         self.db_path = db_path
         self.csv_path = csv_path
         self.create_squash_db()
